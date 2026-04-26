@@ -184,11 +184,13 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
         ) : isPdf ? (
           <PdfReader
             url={proxyUrl(activeAsset.read_url)}
+            initialPage={progress?.current_page ?? 1}
             onPageChange={handlePageChange}
           />
         ) : isEpub ? (
           <EpubReader
             url={proxyUrl(activeAsset.read_url)}
+            initialPercent={progress?.progress_percent ?? 0}
             onProgressChange={handleEpubProgress}
           />
         ) : (

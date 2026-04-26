@@ -5,16 +5,18 @@ import { Loader2 } from "lucide-react"
 
 interface PdfReaderProps {
   url: string
+  initialPage?: number
   onPageChange?: (page: number, total: number) => void
 }
 
-export default function PdfReader({ url, onPageChange }: PdfReaderProps) {
+export default function PdfReader({ url, initialPage = 1, onPageChange }: PdfReaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfRef = useRef<any>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderTaskRef = useRef<any>(null)
+  const startedRef = useRef(false)
 
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(0)
@@ -67,6 +69,7 @@ export default function PdfReader({ url, onPageChange }: PdfReaderProps) {
     setTotalPages(0)
     setCurrentPage(1)
     pdfRef.current = null
+    startedRef.current = false
 
     async function loadPdf() {
       try {
@@ -97,12 +100,14 @@ export default function PdfReader({ url, onPageChange }: PdfReaderProps) {
     }
   }, [url])
 
-  // Affiche la page 1 après que le PDF est chargé ET que le canvas est monté dans le DOM
+  // Affiche la page initiale après que le PDF est chargé ET que le canvas est monté
   useEffect(() => {
-    if (totalPages > 0 && pdfRef.current) {
-      renderPage(pdfRef.current, 1)
+    if (totalPages > 0 && pdfRef.current && !startedRef.current) {
+      startedRef.current = true
+      const page = Math.min(Math.max(1, initialPage), totalPages)
+      renderPage(pdfRef.current, page)
     }
-  }, [totalPages, renderPage])
+  }, [totalPages, renderPage, initialPage])
 
   function goTo(page: number) {
     if (!pdfRef.current || page < 1 || page > totalPages || pageLoading) return

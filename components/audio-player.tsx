@@ -14,6 +14,7 @@ interface AudioPlayerProps {
   title?: string
   subtitle?: string
   onUnauthorized?: () => Promise<string | null>
+  onProgressSave?: (positionSeconds: number, durationSeconds: number, completed: boolean) => void
   className?: string
 }
 
@@ -32,6 +33,7 @@ export function AudioPlayer({
   title,
   subtitle,
   onUnauthorized,
+  onProgressSave,
   className,
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -51,26 +53,38 @@ export function AudioPlayer({
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-    const onLoaded = () => {
-      if (initialPosition > 0 && isFinite(el.duration)) {
-        el.currentTime = Math.min(initialPosition, el.duration - 1)
+
+    const applyPosition = () => {
+      if (initialPosition > 0 && isFinite(el.duration) && el.duration > 0) {
+        // Pas de "- 1" : évite de clamper à tort sur les fichiers courts
+        el.currentTime = Math.min(initialPosition, el.duration)
       }
       setDuration(el.duration || initialDuration || 0)
     }
-    el.addEventListener("loadedmetadata", onLoaded)
-    return () => el.removeEventListener("loadedmetadata", onLoaded)
+
+    el.addEventListener("loadedmetadata", applyPosition)
+    // Si les métadonnées sont déjà disponibles (audio en cache navigateur),
+    // le listener ne se déclenchera plus — appliquer la position immédiatement
+    if (el.readyState >= 1) {
+      applyPosition()
+    }
+    return () => el.removeEventListener("loadedmetadata", applyPosition)
   }, [initialPosition, initialDuration, currentSrc])
 
   const saveProgress = useCallback(
-    async (completed = false) => {
+    (completed = false) => {
       const el = audioRef.current
       if (!el) return
       const pos = Math.floor(el.currentTime)
+      const dur = Math.floor(el.duration || 0)
+
+      // Callback mock-aware : met à jour le store local (mock) ou l'API via le parent
+      onProgressSave?.(pos, dur, completed)
+
+      // Fetch keepalive pour la production : survit au démontage / changement de page
       const token = getAccessToken()
-      if (!token || !API_BASE_URL) return
-      try {
-        // keepalive: true garantit que la requête survit même si la page est quittée/unmountée
-        await fetch(`${API_BASE_URL}/api/v1/progressions/audio/${episodeId}`, {
+      if (token && API_BASE_URL) {
+        fetch(`${API_BASE_URL}/api/v1/progressions/audio/${episodeId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -81,13 +95,12 @@ export function AudioPlayer({
             est_termine: completed,
           }),
           keepalive: true,
-        })
-        lastSavedRef.current = pos
-      } catch {
-        // non-blocking
+        }).catch(() => {})
       }
+
+      lastSavedRef.current = pos
     },
-    [episodeId],
+    [episodeId, onProgressSave],
   )
 
   // Autosave every 15 seconds while playing

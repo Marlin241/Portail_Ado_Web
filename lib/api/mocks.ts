@@ -263,8 +263,8 @@ export const MOCK_AUDIO_PROGRESS: Record<string, AudioProgress> = {
   e1: {
     episode_id: "e1",
     user_id: MOCK_USER.id,
-    position_seconds: 620,
-    duration_seconds: 1580,
+    position_seconds: 42,
+    duration_seconds: 312,
     completed: false,
     last_listened_at: "2026-04-20T07:45:00Z",
   },
@@ -295,9 +295,9 @@ export function mockEpisodeDetail(episodeId: string): EpisodeDetail | null {
       ? { id: podcast.id, titre: podcast.titre, image_url: podcast.image_url }
       : undefined,
     audio: {
-      // Public CC sample audio so the preview player is actually playable
+      // Fichier audio CC public ~5 min — assez long pour tester la reprise de position
       read_url:
-        "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
       mime_type: "audio/mpeg",
       expires_at: new Date(Date.now() + 1000 * 60 * 10).toISOString(),
     },

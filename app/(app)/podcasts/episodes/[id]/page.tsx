@@ -1,13 +1,13 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ChevronDown, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { AudioPlayer } from "@/components/audio-player"
 import { getEpisode } from "@/lib/api/podcasts"
-import { getAudioProgress } from "@/lib/api/progression"
+import { getAudioProgress, putAudioProgress } from "@/lib/api/progression"
 import type { AudioProgress, EpisodeDetail } from "@/lib/api/types"
 
 export default function EpisodePlayerPage({ params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +17,15 @@ export default function EpisodePlayerPage({ params }: { params: Promise<{ id: st
   const [episode, setEpisode] = useState<EpisodeDetail | null>(null)
   const [progress, setProgress] = useState<AudioProgress | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const handleProgressSave = useCallback(
+    (positionSeconds: number, durationSeconds: number, completed: boolean) => {
+      putAudioProgress(id, { position_seconds: positionSeconds, duration_seconds: durationSeconds, completed })
+        .then(setProgress)
+        .catch(() => {})
+    },
+    [id],
+  )
 
   useEffect(() => {
     let active = true
@@ -109,6 +118,7 @@ export default function EpisodePlayerPage({ params }: { params: Promise<{ id: st
             initialPosition={progress?.position_seconds ?? 0}
             initialDuration={episode.duree_secondes}
             onUnauthorized={refreshSignedUrl}
+            onProgressSave={handleProgressSave}
           />
         </div>
 
