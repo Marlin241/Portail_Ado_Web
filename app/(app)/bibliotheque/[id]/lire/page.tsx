@@ -10,8 +10,17 @@ import { getBookProgress, putBookProgress } from "@/lib/api/progression"
 import type { Book, BookAccess, BookProgress } from "@/lib/api/types"
 import dynamic from "next/dynamic"
 
-// Import dynamique pour éviter le SSR (pdf.js a besoin du DOM)
 const PdfReader = dynamic(() => import("@/components/pdf-reader"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center gap-2">
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">Chargement du livre…</span>
+    </div>
+  ),
+})
+
+const EpubReader = dynamic(() => import("@/components/epub-reader"), {
   ssr: false,
   loading: () => (
     <div className="flex h-full items-center justify-center gap-2">
@@ -52,12 +61,22 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
     return () => { active = false }
   }, [id])
 
-  const pdfAsset = access?.assets.find((a) => a.format === "pdf") ?? access?.assets[0]
-  const percent = progress?.progress_percent ?? 0
-  const isPdf = pdfAsset?.format === "pdf" || pdfAsset?.mime_type === "application/pdf"
-  const isMock = pdfAsset?.read_url?.startsWith("#mock") ?? false
+  // Priorité PDF > EPUB > autre
+  const pdfAsset = access?.assets.find((a) => a.format === "pdf")
+  const epubAsset = access?.assets.find((a) => a.format === "epub")
+  const activeAsset = pdfAsset ?? epubAsset ?? access?.assets[0]
 
-  // Sauvegarde automatique à chaque changement de page (PDF uniquement)
+  // Proxy côté serveur pour contourner les restrictions CORS du stockage (MinIO)
+  function proxyUrl(url: string): string {
+    if (url.startsWith("#")) return url
+    return `/api/proxy/book?url=${encodeURIComponent(url)}`
+  }
+
+  const percent = progress?.progress_percent ?? 0
+  const isPdf = activeAsset?.format === "pdf" || activeAsset?.mime_type === "application/pdf"
+  const isEpub = activeAsset?.format === "epub"
+  const isMock = activeAsset?.read_url?.startsWith("#mock") ?? false
+
   const handlePageChange = useCallback(async (page: number, total: number) => {
     if (!book) return
     const pct = total > 0 ? Math.round((page / total) * 100) : 0
@@ -68,9 +87,15 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
         total_pages: total,
       })
       setProgress(updated)
-    } catch {
-      // non-bloquant
-    }
+    } catch { /* non-bloquant */ }
+  }, [book])
+
+  const handleEpubProgress = useCallback(async (pct: number) => {
+    if (!book) return
+    try {
+      const updated = await putBookProgress(book.id, { progress_percent: pct })
+      setProgress(updated)
+    } catch { /* non-bloquant */ }
   }, [book])
 
   async function markComplete() {
@@ -98,7 +123,7 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
     )
   }
 
-  if (!book || !pdfAsset) {
+  if (!book || !activeAsset) {
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-2 bg-background px-6 text-center">
         <p className="text-sm font-semibold">Lecture indisponible</p>
@@ -144,7 +169,6 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
       {/* Zone de lecture */}
       <div className="flex-1 overflow-hidden">
         {isMock ? (
-          // Mode aperçu (mock)
           <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center bg-background text-foreground">
             <div className="relative h-40 w-28 overflow-hidden rounded-xl shadow-md">
               {book.couverture_url && (
@@ -158,20 +182,23 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
             </p>
           </div>
         ) : isPdf ? (
-          // Lecteur PDF canvas — pas de toolbar navigateur
           <PdfReader
-            url={pdfAsset.read_url}
+            url={proxyUrl(activeAsset.read_url)}
             onPageChange={handlePageChange}
           />
-        ) : (
-          // EPUB ou autre format — iframe sans toolbar
-          // #toolbar=0&navpanes=0 masque la toolbar sur Chrome/Edge pour les PDFs aussi
-          <iframe
-            src={`${pdfAsset.read_url}#toolbar=0&navpanes=0&scrollbar=0`}
-            title={book.titre}
-            className="h-full w-full border-0 bg-background"
-            sandbox="allow-same-origin allow-scripts"
+        ) : isEpub ? (
+          <EpubReader
+            url={proxyUrl(activeAsset.read_url)}
+            onProgressChange={handleEpubProgress}
           />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-4 bg-background px-6 text-center text-foreground">
+            <BookOpen className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm font-semibold">Format non supporté</p>
+            <p className="text-xs text-muted-foreground">
+              Ce format ne peut pas être affiché directement dans l&apos;application.
+            </p>
+          </div>
         )}
       </div>
 
