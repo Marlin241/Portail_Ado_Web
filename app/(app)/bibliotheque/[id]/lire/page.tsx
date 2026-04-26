@@ -3,7 +3,6 @@
 import { use, useEffect, useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { BookOpen, CheckCircle2, Loader2, X } from "lucide-react"
-import Image from "next/image"
 import { toast } from "sonner"
 import { getBook, getBookAccess } from "@/lib/api/books"
 import { getBookProgress, putBookProgress } from "@/lib/api/progression"
@@ -75,7 +74,6 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
   const percent = progress?.progress_percent ?? 0
   const isPdf = activeAsset?.format === "pdf" || activeAsset?.mime_type === "application/pdf"
   const isEpub = activeAsset?.format === "epub"
-  const isMock = activeAsset?.read_url?.startsWith("#mock") ?? false
 
   const handlePageChange = useCallback(async (page: number, total: number) => {
     if (!book) return
@@ -168,20 +166,7 @@ export default function BookReaderPage({ params }: { params: Promise<{ id: strin
 
       {/* Zone de lecture */}
       <div className="flex-1 overflow-hidden">
-        {isMock ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center bg-background text-foreground">
-            <div className="relative h-40 w-28 overflow-hidden rounded-xl shadow-md">
-              {book.couverture_url && (
-                <Image src={book.couverture_url} alt="" fill sizes="112px" className="object-cover" />
-              )}
-            </div>
-            <BookOpen className="h-6 w-6 text-primary" />
-            <p className="text-sm font-semibold">Aperçu</p>
-            <p className="text-xs text-muted-foreground max-w-xs">
-              La lecture sécurisée s&apos;ouvre ici quand le backend fournit l&apos;URL temporaire.
-            </p>
-          </div>
-        ) : isPdf ? (
+        {isPdf ? (
           <PdfReader
             url={proxyUrl(activeAsset.read_url)}
             initialPage={progress?.current_page ?? 1}

@@ -1,14 +1,8 @@
 // Typed HTTP client for the FastAPI backend (prefix /api/v1).
-// Uses NEXT_PUBLIC_API_BASE_URL when available; otherwise callers should
-// fall back to mock services (see lib/api/mocks.ts).
 
 import type { ApiError, AuthTokens } from "./types"
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || ""
-export const USE_MOCKS = !API_BASE_URL
-export function isMockMode(): boolean {
-  return USE_MOCKS
-}
 const API_PREFIX = "/api/v1"
 
 const TOKEN_KEY = "bethel.auth.tokens"
@@ -94,13 +88,6 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  if (USE_MOCKS) {
-    throw new Error(
-      "Client API non configuré : définis NEXT_PUBLIC_API_BASE_URL pour activer les appels réseau. " +
-        "Les écrans utilisent des données de démonstration en attendant.",
-    )
-  }
-
   const { body, auth = true, query, retryOn401 = true, headers, ...rest } = options
   const headersInit = new Headers(headers)
   if (body !== undefined && !(body instanceof FormData)) {

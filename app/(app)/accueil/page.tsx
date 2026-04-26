@@ -8,11 +8,20 @@ import { BookCard } from "@/components/book-card"
 import { PodcastCard } from "@/components/podcast-card"
 import { ComingSoonCard } from "@/components/coming-soon-card"
 import { useSession } from "@/lib/auth/session-provider"
-import { listRecommendedBooks } from "@/lib/api/books"
-import { listPodcasts } from "@/lib/api/podcasts"
+import { listRecommendedBooks, getBook } from "@/lib/api/books"
+import { listPodcasts, getEpisode } from "@/lib/api/podcasts"
 import { listContinueListening, listContinueReading } from "@/lib/api/progression"
-import { MOCK_BOOKS, MOCK_EPISODES, MOCK_PODCASTS } from "@/lib/api/mocks"
-import type { AudioProgress, Book, BookProgress, Podcast } from "@/lib/api/types"
+import type { AudioProgress, Book, BookProgress, EpisodeDetail, Podcast } from "@/lib/api/types"
+
+interface ReadingItem {
+  progress: BookProgress
+  book: Book
+}
+
+interface ListeningItem {
+  progress: AudioProgress
+  episode: EpisodeDetail
+}
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -26,23 +35,50 @@ export default function AccueilPage() {
   const { user } = useSession()
   const [recommended, setRecommended] = useState<Book[]>([])
   const [podcasts, setPodcasts] = useState<Podcast[]>([])
-  const [readingProgress, setReadingProgress] = useState<BookProgress[]>([])
-  const [audioProgress, setAudioProgress] = useState<AudioProgress[]>([])
+  const [readingItems, setReadingItems] = useState<ReadingItem[]>([])
+  const [listeningItems, setListeningItems] = useState<ListeningItem[]>([])
 
   useEffect(() => {
     let mounted = true
-    Promise.all([
-      listRecommendedBooks().catch(() => []),
-      listPodcasts().catch(() => []),
-      listContinueReading().catch(() => []),
-      listContinueListening().catch(() => []),
-    ]).then(([r, p, br, ar]) => {
+
+    async function loadData() {
+      const [r, p, readingProgress, audioProgress] = await Promise.all([
+        listRecommendedBooks().catch(() => [] as Book[]),
+        listPodcasts().catch(() => [] as Podcast[]),
+        listContinueReading().catch(() => [] as BookProgress[]),
+        listContinueListening().catch(() => [] as AudioProgress[]),
+      ])
+
       if (!mounted) return
       setRecommended(r)
       setPodcasts(p.slice(0, 6))
-      setReadingProgress(br)
-      setAudioProgress(ar)
-    })
+
+      // Fetch book details for each reading progress item
+      const readItems = (
+        await Promise.all(
+          readingProgress.slice(0, 2).map(async (progress) => {
+            const book = await getBook(progress.book_id).catch(() => null)
+            return book ? { progress, book } : null
+          }),
+        )
+      ).filter((item): item is ReadingItem => item !== null)
+
+      if (mounted) setReadingItems(readItems)
+
+      // Fetch episode details for each audio progress item
+      const listenItems = (
+        await Promise.all(
+          audioProgress.slice(0, 2).map(async (progress) => {
+            const episode = await getEpisode(progress.episode_id).catch(() => null)
+            return episode ? { progress, episode } : null
+          }),
+        )
+      ).filter((item): item is ListeningItem => item !== null)
+
+      if (mounted) setListeningItems(listenItems)
+    }
+
+    loadData()
     return () => {
       mounted = false
     }
@@ -51,7 +87,7 @@ export default function AccueilPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary to-primary/85 px-6 pb-10 pt-6 text-primary-foreground">
+      <section className="relative overflow-hidden bg-linear-to-br from-primary to-primary/85 px-6 pb-10 pt-6 text-primary-foreground">
         <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -bottom-16 -left-10 h-56 w-56 rounded-full bg-secondary/30 blur-3xl" />
 
@@ -77,7 +113,7 @@ export default function AccueilPage() {
       </section>
 
       {/* Continuer la lecture */}
-      {readingProgress.length > 0 && (
+      {readingItems.length > 0 && (
         <section className="mt-6 px-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Continuer la lecture</h2>
@@ -86,17 +122,15 @@ export default function AccueilPage() {
             </Link>
           </div>
           <div className="space-y-2">
-            {readingProgress.slice(0, 2).map((p) => {
-              const book = MOCK_BOOKS.find((b) => b.id === p.book_id)
-              if (!book) return null
-              return <BookCard key={p.book_id} book={book} variant="compact" progress={p.progress_percent} />
-            })}
+            {readingItems.map(({ progress, book }) => (
+              <BookCard key={progress.book_id} book={book} variant="compact" progress={progress.progress_percent} />
+            ))}
           </div>
         </section>
       )}
 
       {/* Continuer l'écoute */}
-      {audioProgress.length > 0 && (
+      {listeningItems.length > 0 && (
         <section className="mt-6 px-6">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Reprendre l&apos;écoute</h2>
@@ -105,28 +139,25 @@ export default function AccueilPage() {
             </Link>
           </div>
           <div className="space-y-2">
-            {audioProgress.slice(0, 2).map((ap) => {
-              const ep = MOCK_EPISODES.find((e) => e.id === ap.episode_id)
-              if (!ep) return null
-              const podcast = MOCK_PODCASTS.find((p) => p.id === ep.podcast_id)
+            {listeningItems.map(({ progress, episode }) => {
               const pct =
-                ap.duration_seconds && ap.duration_seconds > 0
-                  ? Math.round((ap.position_seconds / ap.duration_seconds) * 100)
+                progress.duration_seconds && progress.duration_seconds > 0
+                  ? Math.round((progress.position_seconds / progress.duration_seconds) * 100)
                   : 0
               return (
                 <Link
-                  key={ap.episode_id}
-                  href={`/podcasts/episodes/${ap.episode_id}`}
+                  key={progress.episode_id}
+                  href={`/podcasts/episodes/${progress.episode_id}`}
                   className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
                 >
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-muted">
-                    {podcast?.image_url ? (
-                      <Image src={podcast.image_url || "/placeholder.svg"} alt="" fill sizes="56px" className="object-cover" />
+                    {episode.podcast?.image_url ? (
+                      <Image src={episode.podcast.image_url} alt="" fill sizes="56px" className="object-cover" />
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-semibold">{ep.titre}</p>
-                    <p className="line-clamp-1 text-xs text-muted-foreground">{podcast?.titre}</p>
+                    <p className="line-clamp-1 text-sm font-semibold">{episode.titre}</p>
+                    <p className="line-clamp-1 text-xs text-muted-foreground">{episode.podcast?.titre}</p>
                     <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
                       <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
                     </div>
