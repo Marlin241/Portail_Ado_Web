@@ -1,6 +1,12 @@
 import { apiRequest } from "./client"
 import { mapAuditLog } from "./mappers"
-import type { AdminStats, AuditLog, PaginatedResponse } from "./types"
+import type {
+  AdminStats,
+  AuditLog,
+  ModerationPendingResponse,
+  ModerationPendingType,
+  PaginatedResponse,
+} from "./types"
 
 export async function adminFetchStats(): Promise<AdminStats> {
   return apiRequest<AdminStats>("/admin/stats")
@@ -28,4 +34,18 @@ export async function adminListAuditLogs(
     ...res,
     items: res.items.map(mapAuditLog),
   }))
+}
+
+export async function adminListModerationPending(params: {
+  type?: ModerationPendingType | "all"
+  limit?: number
+  offset?: number
+} = {}): Promise<ModerationPendingResponse> {
+  return apiRequest<ModerationPendingResponse>("/admin/moderation/pending", {
+    query: {
+      type: params.type === "all" ? undefined : params.type,
+      limit: params.limit,
+      offset: params.offset,
+    },
+  })
 }

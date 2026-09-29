@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import useSWR, { mutate as globalMutate } from "swr"
 import {
   Copy,
+  Eye,
   KeyRound,
   MoreVertical,
   Pencil,
@@ -63,13 +64,15 @@ import {
 import {
   adminCreateUser,
   adminDeleteUser,
+  adminGetUserActivity,
+  adminGetUser,
   adminListUsers,
   adminReactivateUser,
   adminResetUserPassword,
   adminSuspendUser,
   adminUpdateUser,
 } from "@/lib/api/admin-users"
-import type { AccountStatus, ApiError, User, UserRole } from "@/lib/api/types"
+import type { AccountStatus, ApiError, User, UserActivity, UserRole } from "@/lib/api/types"
 
 function statusBadge(status: AccountStatus) {
   const map: Record<AccountStatus, { label: string; className: string }> = {
@@ -101,12 +104,103 @@ function roleBadge(role: UserRole, superadmin: boolean) {
   return <Badge variant="outline">{map[role]}</Badge>
 }
 
+function formatUserDate(value?: string | null) {
+  if (!value) return "-"
+  return new Date(value).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function DetailLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium">{value}</span>
+    </div>
+  )
+}
+
+function UserDetailsDialog({
+  user,
+  activity,
+  onClose,
+}: {
+  user: User | null
+  activity: UserActivity | null
+  onClose: () => void
+}) {
+  return (
+    <Dialog open={!!user} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-xl">Detail du compte</DialogTitle>
+          <DialogDescription>
+            {user ? `${user.first_name} ${user.last_name} - @${user.username}` : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        {user ? (
+          <div className="grid gap-3 text-sm">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
+              <span className="text-muted-foreground">Statut</span>
+              {statusBadge(user.account_status)}
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
+              <span className="text-muted-foreground">Role</span>
+              {roleBadge(user.role, user.is_superadmin)}
+            </div>
+            <DetailLine label="Email" value={user.email} />
+            <DetailLine label="Nom d'utilisateur" value={`@${user.username}`} />
+            <DetailLine label="Date de naissance" value={formatUserDate(user.birth_date)} />
+            <DetailLine
+              label="Activation"
+              value={user.must_change_password ? "Mot de passe temporaire" : "Mot de passe final defini"}
+            />
+            <DetailLine label="Cree le" value={formatUserDate(user.created_at)} />
+            <DetailLine label="Active le" value={formatUserDate(user.activated_at)} />
+            {activity ? (
+              <div className="mt-2 rounded-lg border border-border/70 p-3">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Activite Sprint 4
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <DetailLine label="Creations" value={`${activity.creations_approuvees}/${activity.creations_soumises}`} />
+                  <DetailLine
+                    label="Quiz termines"
+                    value={String(activity.quiz_completes)}
+                  />
+                  <DetailLine
+                    label="Propositions"
+                    value={String(activity.propositions_musique_soumises)}
+                  />
+                  <DetailLine
+                    label="Defis termines"
+                    value={`${activity.defis_termines}/${activity.participations_defis}`}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        <DialogFooter>
+          <Button onClick={onClose}>Fermer</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("")
   const [role, setRole] = useState<string>("all")
   const [status, setStatus] = useState<string>("all")
   const [createOpen, setCreateOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
+  const [viewing, setViewing] = useState<User | null>(null)
+  const [viewingActivity, setViewingActivity] = useState<UserActivity | null>(null)
   const [confirmingSuspend, setConfirmingSuspend] = useState<User | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<User | null>(null)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
@@ -124,6 +218,21 @@ export default function AdminUsersPage() {
     await mutate()
     globalMutate("admin-stats")
     globalMutate("admin-audit-recent")
+  }
+
+  async function onView(user: User) {
+    setViewing(user)
+    setViewingActivity(null)
+    try {
+      const [fresh, activity] = await Promise.all([
+        adminGetUser(user.id),
+        adminGetUserActivity(user.id),
+      ])
+      setViewing(fresh)
+      setViewingActivity(activity)
+    } catch (error) {
+      toast.error((error as ApiError).message ?? "Consultation impossible")
+    }
   }
 
   async function onSuspend(user: User) {
@@ -279,6 +388,10 @@ export default function AdminUsersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => onView(user)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                Consulter
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setEditing(user)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Modifier
@@ -337,6 +450,15 @@ export default function AdminUsersPage() {
         user={editing}
         onClose={() => setEditing(null)}
         onSaved={refresh}
+      />
+
+      <UserDetailsDialog
+        user={viewing}
+        activity={viewingActivity}
+        onClose={() => {
+          setViewing(null)
+          setViewingActivity(null)
+        }}
       />
 
       <AlertDialog open={!!confirmingSuspend} onOpenChange={(open) => !open && setConfirmingSuspend(null)}>

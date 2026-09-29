@@ -4,18 +4,26 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   BookOpen,
+  BookOpenCheck,
+  Brain,
+  CalendarDays,
   ClipboardList,
   FileAudio,
+  Flag,
+  HeartPulse,
+  Inbox,
   LayoutDashboard,
   LogOut,
   MessageSquareWarning,
+  Music2,
+  Palette,
   Podcast,
   Sparkles,
   Users,
 } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useSession } from "@/lib/auth/session-provider"
 import { Button } from "@/components/ui/button"
+import { useSession } from "@/lib/auth/session-provider"
+import { cn } from "@/lib/utils"
 
 interface NavItem {
   href: string
@@ -33,16 +41,25 @@ const NAV: { section: string; items: NavItem[] }[] = [
     section: "Gestion",
     items: [
       { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
-      { href: "/admin/livres", label: "Bibliothèque", icon: BookOpen },
+      { href: "/admin/livres", label: "Bibliotheque", icon: BookOpen },
       { href: "/admin/podcasts", label: "Podcasts", icon: Podcast },
+      { href: "/admin/agenda", label: "Agenda", icon: CalendarDays },
+      { href: "/admin/quiz", label: "Quiz", icon: Brain },
+      { href: "/admin/biblique", label: "Biblique etendu", icon: BookOpenCheck },
+      { href: "/admin/musique", label: "Musique gospel", icon: Music2 },
+      { href: "/admin/creativite", label: "Creativite ados", icon: Palette },
+      { href: "/admin/vie-emotionnelle", label: "Vie emotionnelle", icon: HeartPulse },
+      { href: "/admin/bien-etre", label: "Bien-etre", icon: HeartPulse },
+      { href: "/admin/defis", label: "Defis", icon: Flag },
     ],
   },
   {
-    section: "Modération",
+    section: "Moderation",
     items: [
-      { href: "/admin/temoignages", label: "Témoignages", icon: FileAudio, comingSoon: true },
-      { href: "/admin/questions", label: "Questions", icon: MessageSquareWarning, comingSoon: true },
-      { href: "/admin/exploits", label: "Exploits", icon: Sparkles, comingSoon: true },
+      { href: "/admin/temoignages", label: "Temoignages", icon: FileAudio },
+      { href: "/admin/questions", label: "Questions", icon: MessageSquareWarning },
+      { href: "/admin/exploits", label: "Exploits", icon: Sparkles },
+      { href: "/admin/moderation", label: "File d'attente", icon: Inbox },
     ],
   },
   {
@@ -54,6 +71,17 @@ const NAV: { section: string; items: NavItem[] }[] = [
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   const { user, logout } = useSession()
+  const isModeratorOnly = user?.role === "moderator" && !user.is_superadmin
+  const nav = isModeratorOnly
+    ? [
+        {
+          section: "Moderation",
+          items: NAV.find((section) => section.section === "Moderation")?.items.filter(
+            (item) => item.href === "/admin/temoignages",
+          ) ?? [],
+        },
+      ]
+    : NAV
 
   return (
     <aside className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
@@ -63,12 +91,14 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         <div className="flex min-w-0 flex-col">
           <span className="font-serif text-base font-semibold leading-tight">Bethel Ados</span>
-          <span className="text-sidebar-foreground/70 truncate text-xs">Panel administrateur</span>
+          <span className="text-sidebar-foreground/70 truncate text-xs">
+            {isModeratorOnly ? "Panel moderation" : "Panel administrateur"}
+          </span>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {NAV.map((section) => (
+        {nav.map((section) => (
           <div key={section.section} className="mb-6">
             <div className="text-sidebar-foreground/60 px-3 pb-2 text-xs font-semibold uppercase tracking-wider">
               {section.section}
@@ -96,7 +126,7 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.comingSoon ? (
                         <span className="bg-sidebar-primary/20 text-sidebar-primary rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase">
-                          bientôt
+                          bientot
                         </span>
                       ) : null}
                     </Link>
@@ -131,13 +161,13 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
           }}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Se déconnecter
+          Se deconnecter
         </Button>
         <Link
           href="/accueil"
           className="text-sidebar-foreground/70 hover:text-sidebar-foreground text-center text-xs underline underline-offset-2"
         >
-          Retour à l&apos;app utilisateur
+          Retour a l&apos;app utilisateur
         </Link>
       </div>
     </aside>

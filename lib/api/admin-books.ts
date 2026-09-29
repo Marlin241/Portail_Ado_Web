@@ -47,6 +47,16 @@ export async function adminCreateCategory(payload: {
   return apiRequest<CategorieLivre>("/livres/categories", { method: "POST", body: payload }).then(mapCategory)
 }
 
+export async function adminUpdateCategory(
+  id: string,
+  payload: { nom?: string; description?: string | null },
+): Promise<CategorieLivre> {
+  return apiRequest<CategorieLivre>(`/livres/categories/${id}`, {
+    method: "PUT",
+    body: payload,
+  }).then(mapCategory)
+}
+
 export async function adminDeleteCategory(id: string): Promise<void> {
   await apiRequest<void>(`/livres/categories/${id}`, { method: "DELETE" })
 }

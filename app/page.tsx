@@ -27,6 +27,10 @@ export default function RootPage() {
       router.replace("/admin")
       return
     }
+    if (user.role === "moderator") {
+      router.replace("/admin/temoignages")
+      return
+    }
     router.replace("/accueil")
   }, [status, user, router])
 

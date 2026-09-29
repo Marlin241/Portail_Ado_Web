@@ -42,6 +42,10 @@ function LoginPageContent() {
         router.replace("/admin")
         return
       }
+      if (res.user.role === "moderator") {
+        router.replace("/admin/temoignages")
+        return
+      }
       router.replace("/accueil")
     } catch (err) {
       const apiErr = err as ApiError
@@ -58,20 +62,21 @@ function LoginPageContent() {
       description="Utilise les identifiants remis par ton encadreur. Pas encore de compte ? Rapproche-toi de ton responsable jeunesse."
       footer={
         <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground">
-          <p className="font-semibold text-foreground">Comptes de démo</p>
+          <p className="font-semibold text-foreground">Compte fourni par un administrateur</p>
           <p className="mt-1">
-            Essaie <span className="font-semibold text-foreground">admin@test</span> ou{" "}
-            <span className="font-semibold text-foreground">nouveau@test</span> avec n&apos;importe quel mot de passe (4+
-            caractères).
+            Le backend impose un mot de passe d&apos;au moins 8 caracteres. A la premiere connexion,
+            l&apos;utilisateur definit son mot de passe final.
           </p>
         </div>
       }
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-foreground">Email ou nom d&apos;utilisateur</span>
+          <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-foreground/70">
+            Email ou nom d&apos;utilisateur
+          </span>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/60" />
             <input
               type="text"
               autoComplete="username"
@@ -80,47 +85,52 @@ function LoginPageContent() {
               onChange={(e) => setIdentifier(e.target.value)}
               required
               placeholder="esther@bethel-ados.org"
-              className="w-full rounded-2xl border border-border bg-card px-10 py-3 text-sm outline-none ring-primary/20 transition-all focus:border-primary focus:ring-4"
+              className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 px-10 py-3.5 text-sm font-medium outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary focus:bg-card focus:ring-0"
             />
           </div>
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-foreground">Mot de passe</span>
+          <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-foreground/70">
+            Mot de passe
+          </span>
           <div className="relative">
-            <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/60" />
             <input
               type={showPwd ? "text" : "password"}
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={4}
+              minLength={8}
               placeholder="••••••••"
-              className="w-full rounded-2xl border border-border bg-card px-10 py-3 text-sm outline-none ring-primary/20 transition-all focus:border-primary focus:ring-4"
+              className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 px-10 py-3.5 text-sm font-medium outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary focus:bg-card focus:ring-0"
             />
             <button
               type="button"
               onClick={() => setShowPwd((v) => !v)}
               aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
         </label>
 
-        <div className="flex items-center justify-end">
-          <Link href="/forgot-password" className="text-xs font-semibold text-primary hover:underline">
+        <div className="flex items-center justify-end pt-1">
+          <Link href="/forgot-password" className="text-xs font-bold text-primary hover:underline">
             Mot de passe oublié ?
           </Link>
         </div>
 
         <button
           type="submit"
-          disabled={loading || !identifier || !password}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:shadow-primary/30 disabled:opacity-60"
+          disabled={loading || !identifier || password.length < 8}
+          className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-4 py-4 text-sm font-bold uppercase tracking-wider text-white shadow-xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:shadow-primary/45 active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0"
+          style={{ background: "linear-gradient(135deg, oklch(0.36 0.13 222) 0%, oklch(0.50 0.14 205) 100%)" }}
         >
+          {/* Reflet lumineux sur le bouton */}
+          <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-2xl bg-white/10" />
           {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
           Se connecter
         </button>

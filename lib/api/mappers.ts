@@ -5,10 +5,15 @@ import type {
   Book,
   BookAccess,
   BookProgress,
+  AdminContenuVieDetail,
+  AdminContenuVieListItem,
   CategorieLivre,
+  ContenuVieDetail,
+  ContenuVieListItem,
   Episode,
   EpisodeDetail,
   Podcast,
+  QuizProfil,
   User,
 } from "./types"
 
@@ -326,5 +331,24 @@ export function mapAuditLog(raw: BackendAuditLog | AuditLog): AuditLog {
         ? { detail: source.detail ?? null, target_label: source.target_label ?? null }
         : source.metadata ?? null,
     created_at: source.created_at ?? "",
+  }
+}
+
+export function mapQuizProfil<T extends QuizProfil>(raw: T): T {
+  return {
+    ...raw,
+    personnage_biblique_image_url: resolveApiUrl(raw.personnage_biblique_image_url),
+  }
+}
+
+export function mapContenuVie<
+  T extends ContenuVieListItem | ContenuVieDetail | AdminContenuVieListItem | AdminContenuVieDetail,
+>(raw: T): T {
+  return {
+    ...raw,
+    image_couverture_url: resolveApiUrl(raw.image_couverture_url),
+    ...("video_fichier_url" in raw
+      ? { video_fichier_url: resolveApiUrl(raw.video_fichier_url) }
+      : {}),
   }
 }

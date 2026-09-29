@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Loader2, Search, SlidersHorizontal, Sparkles, X } from "lucide-react"
 import { BookCard } from "@/components/book-card"
-import { listBooks, listCategories, listRecommendedBooks } from "@/lib/api/books"
+import { listBooks, listBooksByCategory, listCategories, listRecommendedBooks } from "@/lib/api/books"
 import type { Book, CategorieLivre } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 
@@ -23,7 +23,12 @@ export default function BibliothequePage() {
   useEffect(() => {
     let active = true
     setLoading(true)
-    listBooks({ search: search || undefined, category_id: selectedCat || undefined, limit: 50 })
+    const request =
+      selectedCat && !search
+        ? listBooksByCategory(selectedCat, { limit: 50 })
+        : listBooks({ search: search || undefined, category_id: selectedCat || undefined, limit: 50 })
+
+    request
       .then((res) => {
         if (!active) return
         setBooks(res.items)

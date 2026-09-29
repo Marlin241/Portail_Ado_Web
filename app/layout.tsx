@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google"
+import { Plus_Jakarta_Sans, Geist_Mono, Fraunces } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner"
 import { SessionProvider } from "@/lib/auth/session-provider"
@@ -9,6 +9,13 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   display: "swap",
+})
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["opsz", "SOFT", "WONK"],
 })
 
 const geistMono = Geist_Mono({
@@ -47,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="fr" className={`${jakarta.variable} ${geistMono.variable} bg-background`}>
+    <html lang="fr" className={`${jakarta.variable} ${geistMono.variable} ${fraunces.variable} bg-background`}>
       <body className="font-sans antialiased bg-background text-foreground">
         <SessionProvider>{children}</SessionProvider>
         <Toaster position="top-center" richColors closeButton />

@@ -69,6 +69,7 @@ import {
   adminDeleteBook,
   adminDeleteCategory,
   adminUpdateBook,
+  adminUpdateCategory,
   adminUploadBookCover,
   adminUploadBookFile,
 } from "@/lib/api/admin-books"
@@ -658,21 +659,41 @@ function CategoriesDialog({
   const [nom, setNom] = useState("")
   const [description, setDescription] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<CategorieLivre | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<CategorieLivre | null>(null)
 
-  async function onCreate(event: FormEvent) {
+  function resetCategoryForm() {
+    setNom("")
+    setDescription("")
+    setEditingCategory(null)
+  }
+
+  function onEdit(category: CategorieLivre) {
+    setEditingCategory(category)
+    setNom(category.nom)
+    setDescription(category.description ?? "")
+  }
+
+  async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (!nom.trim()) return
 
     setSubmitting(true)
     try {
-      await adminCreateCategory({ nom: nom.trim(), description: description.trim() || null })
-      toast.success("Categorie creee")
-      setNom("")
-      setDescription("")
+      if (editingCategory) {
+        await adminUpdateCategory(editingCategory.id, {
+          nom: nom.trim(),
+          description: description.trim() || null,
+        })
+        toast.success("Categorie mise a jour")
+      } else {
+        await adminCreateCategory({ nom: nom.trim(), description: description.trim() || null })
+        toast.success("Categorie creee")
+      }
+      resetCategoryForm()
       onChanged()
     } catch (error) {
-      toast.error((error as ApiError).message ?? "Creation impossible")
+      toast.error((error as ApiError).message ?? "Operation impossible")
     } finally {
       setSubmitting(false)
     }
@@ -691,7 +712,13 @@ function CategoriesDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!value) resetCategoryForm()
+          onOpenChange(value)
+        }}
+      >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">Gerer les categories</DialogTitle>
@@ -701,7 +728,7 @@ function CategoriesDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={onCreate} className="border-border/70 grid gap-3 rounded-lg border p-4">
+          <form onSubmit={onSubmit} className="border-border/70 grid gap-3 rounded-lg border p-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
               <div>
                 <Label htmlFor="cn">Nom</Label>
@@ -717,11 +744,18 @@ function CategoriesDialog({
               </div>
               <div className="flex items-end">
                 <Button type="submit" disabled={submitting}>
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Ajouter
+                  {editingCategory ? <Pencil className="mr-1.5 h-4 w-4" /> : <Plus className="mr-1.5 h-4 w-4" />}
+                  {editingCategory ? "Enregistrer" : "Ajouter"}
                 </Button>
               </div>
             </div>
+            {editingCategory ? (
+              <div>
+                <Button type="button" variant="ghost" size="sm" onClick={resetCategoryForm}>
+                  Annuler la modification
+                </Button>
+              </div>
+            ) : null}
           </form>
 
           <div className="max-h-80 overflow-y-auto">
@@ -730,7 +764,7 @@ function CategoriesDialog({
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead className="w-16" />
+                  <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -748,15 +782,25 @@ function CategoriesDialog({
                         {category.description ?? "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                          aria-label={`Supprimer ${category.nom}`}
-                          onClick={() => setConfirmingDelete(category)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Modifier ${category.nom}`}
+                            onClick={() => onEdit(category)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            aria-label={`Supprimer ${category.nom}`}
+                            onClick={() => setConfirmingDelete(category)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

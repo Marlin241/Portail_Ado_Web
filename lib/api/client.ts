@@ -69,6 +69,10 @@ async function tryRefresh(): Promise<AuthTokens | null> {
   return refreshPromise
 }
 
+export function refreshAccessToken(): Promise<AuthTokens | null> {
+  return tryRefresh()
+}
+
 export interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown
   auth?: boolean

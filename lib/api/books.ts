@@ -31,6 +31,21 @@ export async function listCategories(): Promise<CategorieLivre[]> {
   return apiRequest<CategorieLivre[]>("/livres/categories").then((items) => items.map(mapCategory))
 }
 
+export async function listBooksByCategory(
+  categoryId: string,
+  params: Pick<ListBooksParams, "limit" | "offset"> = {},
+): Promise<PaginatedResponse<Book>> {
+  return apiRequest<PaginatedResponse<Book>>(`/livres/categories/${categoryId}`, {
+    query: {
+      limit: params.limit,
+      offset: params.offset,
+    },
+  }).then((res) => ({
+    ...res,
+    items: res.items.map(mapBook),
+  }))
+}
+
 export async function getBook(id: string): Promise<Book | null> {
   return apiRequest<Book>(`/livres/${id}`).then(mapBook)
 }

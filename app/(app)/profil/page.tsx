@@ -191,11 +191,11 @@ export default function ProfilPage() {
           </DialogContent>
         </Dialog>
 
-        {user && (user.role === "admin" || user.is_superadmin) ? (
-          <Link href="/admin" className="block">
+        {user && (user.role === "admin" || user.role === "moderator" || user.is_superadmin) ? (
+          <Link href={user.role === "moderator" && !user.is_superadmin ? "/admin/temoignages" : "/admin"} className="block">
             <RowAction
               icon={LayoutDashboard}
-              title="Panel administrateur"
+              title={user.role === "moderator" && !user.is_superadmin ? "Panel moderation" : "Panel administrateur"}
               subtitle="Gérer utilisateurs, contenus et modération"
             />
           </Link>

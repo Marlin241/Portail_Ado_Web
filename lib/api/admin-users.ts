@@ -6,6 +6,7 @@ import type {
   AdminUserUpdate,
   PaginatedResponse,
   User,
+  UserActivity,
 } from "./types"
 
 export interface ListUsersParams {
@@ -31,6 +32,10 @@ export async function adminListUsers(
     ...res,
     items: res.items.map(mapUser),
   }))
+}
+
+export async function adminGetUser(id: string): Promise<User> {
+  return apiRequest<User>(`/users/${id}`, { method: "GET" }).then(mapUser)
 }
 
 export async function adminCreateUser(payload: AdminUserCreate): Promise<AdminUserCreateResult> {
@@ -75,4 +80,8 @@ export async function adminResetUserPassword(
 
 export async function adminDeleteUser(id: string): Promise<void> {
   await apiRequest<void>(`/users/${id}`, { method: "DELETE" })
+}
+
+export async function adminGetUserActivity(id: string): Promise<UserActivity> {
+  return apiRequest<UserActivity>(`/admin/users/${id}/activite`)
 }

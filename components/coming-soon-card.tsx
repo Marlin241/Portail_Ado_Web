@@ -12,22 +12,29 @@ export function ComingSoonCard({ icon: Icon, title, description, className }: Co
   return (
     <div
       className={cn(
-        "relative flex items-start gap-3 overflow-hidden rounded-2xl border border-dashed border-border/70 bg-muted/40 p-4",
+        "group relative flex items-start gap-3.5 overflow-hidden rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/50",
         className,
       )}
       aria-disabled="true"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-        <Icon className="h-5 w-5" />
+      {/* Reflet subtil en haut à droite */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-0 h-16 w-16 rounded-bl-3xl bg-linear-to-bl from-accent/8 to-transparent"
+      />
+
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground shadow-sm">
+        <Icon className="h-5 w-5" aria-hidden />
       </div>
+
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-foreground">{title}</p>
-          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-accent-foreground">
             Bientôt
           </span>
         </div>
-        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{description}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{description}</p>
       </div>
     </div>
   )

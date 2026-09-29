@@ -42,11 +42,3 @@ export async function putAudioProgress(
     },
   }).then(mapAudioProgress)
 }
-
-export async function listContinueReading(): Promise<BookProgress[]> {
-  return apiRequest<BookProgress[]>("/progressions/livres").then((items) => items.map(mapBookProgress))
-}
-
-export async function listContinueListening(): Promise<AudioProgress[]> {
-  return apiRequest<AudioProgress[]>("/progressions/audio").then((items) => items.map(mapAudioProgress))
-}

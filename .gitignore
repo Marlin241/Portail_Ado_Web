@@ -15,3 +15,7 @@ node_modules
 .next/
 .DS_Store
 .env
+# Outils locaux / captures
+.playwright-mcp/
+screenshot-*.png
+.claude/settings.local.json
