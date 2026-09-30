@@ -476,7 +476,7 @@ function ArticleDialog({
               onCheckedChange={(checked) => setForm((current) => ({ ...current, publie: checked }))}
             />
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
+          <label className="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border border-dashed bg-muted/30 p-3 text-sm">
             <ImagePlus className="h-4 w-4 text-muted-foreground" />
             <span className="min-w-0 flex-1 truncate">{imageName || "Image de couverture"}</span>
             <Upload className="h-4 w-4 text-muted-foreground" />

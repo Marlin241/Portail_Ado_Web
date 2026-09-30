@@ -384,7 +384,7 @@ function PodcastDialog({
 
           <div className="grid gap-2">
             <Label>Pochette a televerser</Label>
-            <label className="border-border/70 bg-muted/30 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed p-3 text-sm">
+            <label className="border-border/70 bg-muted/30 flex min-w-0 cursor-pointer items-center gap-3 rounded-lg border border-dashed p-3 text-sm">
               <ImagePlus className="text-muted-foreground h-4 w-4 shrink-0" />
               <span className="min-w-0 flex-1 truncate">
                 {imageFileName

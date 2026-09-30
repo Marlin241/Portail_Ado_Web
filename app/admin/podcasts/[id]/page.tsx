@@ -410,7 +410,8 @@ export default function AdminPodcastDetailPage() {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        {/* min-w-0 sur les enfants : un nom de fichier très long ne doit pas élargir la grille */}
+        <DialogContent className="max-w-lg [&>*]:min-w-0">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier l'épisode" : "Nouvel épisode"}</DialogTitle>
             <DialogDescription>
@@ -420,7 +421,7 @@ export default function AdminPodcastDetailPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 [&>*]:min-w-0">
             <div className="grid gap-2">
               <Label htmlFor="ep-titre">Titre</Label>
               <Input
@@ -487,7 +488,7 @@ export default function AdminPodcastDetailPage() {
 
             <div className="grid gap-2">
               <Label>Fichier audio</Label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-3 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
+              <label className="flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-muted/40 p-3 text-sm text-muted-foreground transition hover:border-primary hover:text-foreground">
                 <Upload className="size-4" />
                 <span className="flex-1 truncate">
                   {audioFileName
