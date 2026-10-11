@@ -8,6 +8,7 @@ import {
   KeyRound,
   MoreVertical,
   Pencil,
+  QrCode,
   Search,
   ShieldBan,
   ShieldCheck,
@@ -73,6 +74,7 @@ import {
   adminUpdateUser,
 } from "@/lib/api/admin-users"
 import type { AccountStatus, ApiError, User, UserActivity, UserRole } from "@/lib/api/types"
+import { regenererCodeAdo } from "@/lib/api/presences"
 
 function statusBadge(status: AccountStatus) {
   const map: Record<AccountStatus, { label: string; className: string }> = {
@@ -203,6 +205,18 @@ export default function AdminUsersPage() {
   const [viewingActivity, setViewingActivity] = useState<UserActivity | null>(null)
   const [confirmingSuspend, setConfirmingSuspend] = useState<User | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<User | null>(null)
+  const [confirmingQr, setConfirmingQr] = useState<User | null>(null)
+
+  async function onRegenererQr(user: User) {
+    try {
+      await regenererCodeAdo(user.id)
+      toast.success(`Nouveau QR créé pour ${user.first_name} ${user.last_name}. L'ancien ne marche plus.`)
+    } catch (error) {
+      toast.error((error as ApiError).message ?? "Impossible de changer le QR")
+    } finally {
+      setConfirmingQr(null)
+    }
+  }
   const [tempPassword, setTempPassword] = useState<string | null>(null)
 
   const swrKey = ["admin-users", search, role, status] as const
@@ -400,6 +414,12 @@ export default function AdminUsersPage() {
                                 <KeyRound className="mr-2 h-4 w-4" />
                                 Réinitialiser le mot de passe
                               </DropdownMenuItem>
+                              {user.role === "user" ? (
+                                <DropdownMenuItem onClick={() => setConfirmingQr(user)}>
+                                  <QrCode className="mr-2 h-4 w-4" />
+                                  Changer son QR
+                                </DropdownMenuItem>
+                              ) : null}
                               <DropdownMenuSeparator />
                               {user.account_status === "suspended" ? (
                                 <DropdownMenuItem onClick={() => onReactivate(user)}>
@@ -460,6 +480,25 @@ export default function AdminUsersPage() {
           setViewingActivity(null)
         }}
       />
+
+      <AlertDialog open={!!confirmingQr} onOpenChange={(open) => !open && setConfirmingQr(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Changer le QR de présence ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmingQr
+                ? `L'ancien QR de ${confirmingQr.first_name} ${confirmingQr.last_name} ne marchera plus. Son app affichera le nouveau dès sa prochaine ouverture avec internet.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmingQr && void onRegenererQr(confirmingQr)}>
+              Changer le QR
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!confirmingSuspend} onOpenChange={(open) => !open && setConfirmingSuspend(null)}>
         <AlertDialogContent>

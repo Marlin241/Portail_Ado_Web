@@ -95,7 +95,7 @@ export default function PresencesPage() {
                     >
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate font-medium">{r.titre}</span>
-                        <span className="text-muted-foreground text-xs capitalize">
+                        <span className="text-muted-foreground text-xs first-letter:uppercase">
                           {formaterJour(r.jour)}
                         </span>
                       </span>
