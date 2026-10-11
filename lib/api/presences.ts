@@ -48,6 +48,19 @@ export interface PaginatedReunions {
 
 const BASE = "/admin/presences"
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Vrai si la valeur est un identifiant UUID (refuse « ../ » et autres chemins piégés). */
+export function estUuid(valeur: unknown): valeur is string {
+  return typeof valeur === "string" && UUID_RE.test(valeur)
+}
+
+/** Segment d'URL sûr : un UUID, sinon on refuse d'appeler l'API. */
+function id(valeur: string): string {
+  if (!estUuid(valeur)) throw { status: 400, message: "Identifiant invalide" } satisfies ApiError
+  return encodeURIComponent(valeur)
+}
+
 export function scannerCode(code: string): Promise<EnregistrementPresence> {
   return apiRequest<EnregistrementPresence>(`${BASE}/scan`, { method: "POST", body: { code } })
 }
@@ -73,26 +86,26 @@ export function listerReunions(
   return apiRequest<PaginatedReunions>(`${BASE}/reunions`, { query: params })
 }
 
-export function getReunion(id: string): Promise<ReunionDetail> {
-  return apiRequest<ReunionDetail>(`${BASE}/reunions/${id}`)
+export function getReunion(reunionId: string): Promise<ReunionDetail> {
+  return apiRequest<ReunionDetail>(`${BASE}/reunions/${id(reunionId)}`)
 }
 
-export function renommerReunion(id: string, titre: string): Promise<ReunionDetail> {
-  return apiRequest<ReunionDetail>(`${BASE}/reunions/${id}`, { method: "PATCH", body: { titre } })
+export function renommerReunion(reunionId: string, titre: string): Promise<ReunionDetail> {
+  return apiRequest<ReunionDetail>(`${BASE}/reunions/${id(reunionId)}`, { method: "PATCH", body: { titre } })
 }
 
 export async function retirerPresence(reunionId: string, userId: string): Promise<void> {
-  await apiRequest<void>(`${BASE}/reunions/${reunionId}/presences/${userId}`, {
+  await apiRequest<void>(`${BASE}/reunions/${id(reunionId)}/presences/${id(userId)}`, {
     method: "DELETE",
   })
 }
 
 export function regenererCodeAdo(userId: string): Promise<{ code: string }> {
-  return apiRequest<{ code: string }>(`${BASE}/ados/${userId}/code/regenerer`, { method: "POST" })
+  return apiRequest<{ code: string }>(`${BASE}/ados/${id(userId)}/code/regenerer`, { method: "POST" })
 }
 
-export function telechargerPdfReunion(id: string): Promise<Blob> {
-  return apiRequestBlob(`${BASE}/reunions/${id}/pdf`)
+export function telechargerPdfReunion(reunionId: string): Promise<Blob> {
+  return apiRequestBlob(`${BASE}/reunions/${id(reunionId)}/pdf`)
 }
 
 /** Message à afficher pour une erreur de scan / coche, en français simple. */

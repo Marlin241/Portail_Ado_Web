@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
+  estUuid,
   formaterJour,
   getReunion,
   renommerReunion,
@@ -35,7 +36,9 @@ function heure(iso: string) {
 }
 
 export default function ReunionPage() {
-  const { id } = useParams<{ id: string }>()
+  const { id: brut } = useParams<{ id: string }>()
+  // Un identifiant qui n'est pas un UUID (lien piégé avec « ../ ») n'appelle jamais l'API.
+  const id = estUuid(brut) ? brut : ""
   const { data: reunion, error, mutate } = useSWR(id ? ["presences-reunion", id] : null, () =>
     getReunion(id),
   )
@@ -98,7 +101,7 @@ export default function ReunionPage() {
     }
   }
 
-  if (error) {
+  if (error || !id) {
     return (
       <div className="px-4 py-10 text-center md:px-10">
         <p className="text-muted-foreground">Réunion introuvable.</p>
