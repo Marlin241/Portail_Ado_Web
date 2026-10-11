@@ -134,7 +134,11 @@ export default function ScannerPage() {
     const video = videoRef.current
     if (!video) return
     const detecteur = new BarcodeDetector({ formats: ["qr_code"] })
-    const demarrage = fileCamera.current.then(async () => {
+
+    const cameraActive = () =>
+      !!flux && flux.getVideoTracks().some((piste) => piste.readyState === "live")
+
+    const ouvrirCamera = async () => {
       if (annule) return
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error("camera-indisponible")
@@ -146,29 +150,49 @@ export default function ScannerPage() {
           s.getTracks().forEach((piste) => piste.stop())
           return
         }
+        flux?.getTracks().forEach((piste) => piste.stop())
         flux = s
+        // Écran verrouillé, autre appli… : Chrome coupe la caméra. On la relance au retour.
+        s.getVideoTracks().forEach((piste) => {
+          piste.onended = () => {
+            if (!annule && document.visibilityState === "visible") relancer()
+          }
+        })
         video.srcObject = s
         await video.play()
-        const lire = async () => {
-          if (annule) return
-          if (video.readyState >= 2) {
-            try {
-              const texte = (await detecteur.detect(video))[0]?.rawValue
-              if (texte) void traiterCodeRef.current(texte)
-            } catch {
-              // Image illisible ou lecteur en cours de chargement : on réessaie au tour suivant.
-            }
-          }
-          prochaineLecture = setTimeout(lire, INTERVALLE_LECTURE_MS)
-        }
-        void lire()
+        setErreurCamera(null)
       } catch (err) {
         if (!annule) setErreurCamera(messageCamera(err))
       }
-    })
-    fileCamera.current = demarrage
+    }
+
+    const relancer = () => {
+      fileCamera.current = fileCamera.current.then(ouvrirCamera)
+    }
+
+    const auRetour = () => {
+      if (document.visibilityState === "visible" && !cameraActive()) relancer()
+    }
+
+    const lire = async () => {
+      if (annule) return
+      if (cameraActive() && video.readyState >= 2) {
+        try {
+          const texte = (await detecteur.detect(video))[0]?.rawValue
+          if (texte) void traiterCodeRef.current(texte)
+        } catch {
+          // Image illisible ou lecteur en cours de chargement : on réessaie au tour suivant.
+        }
+      }
+      prochaineLecture = setTimeout(lire, INTERVALLE_LECTURE_MS)
+    }
+
+    relancer()
+    void lire()
+    document.addEventListener("visibilitychange", auRetour)
     return () => {
       annule = true
+      document.removeEventListener("visibilitychange", auRetour)
       if (prochaineLecture) clearTimeout(prochaineLecture)
       flux?.getTracks().forEach((piste) => piste.stop())
       if (minuteur.current) clearTimeout(minuteur.current)
