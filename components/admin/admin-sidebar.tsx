@@ -18,6 +18,7 @@ import {
   Music2,
   Palette,
   Podcast,
+  ScanLine,
   Sparkles,
   Users,
 } from "lucide-react"
@@ -40,6 +41,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
   {
     section: "Gestion",
     items: [
+      { href: "/admin/presences", label: "Présences", icon: ScanLine },
       { href: "/admin/utilisateurs", label: "Utilisateurs", icon: Users },
       { href: "/admin/livres", label: "Bibliotheque", icon: BookOpen },
       { href: "/admin/podcasts", label: "Podcasts", icon: Podcast },

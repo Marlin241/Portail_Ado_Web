@@ -150,3 +150,21 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (ct.includes("application/json")) return (await res.json()) as T
   return (await res.text()) as unknown as T
 }
+
+/** Télécharge une ressource binaire (ex. PDF) avec l'authentification et le refresh. */
+export async function apiRequestBlob(path: string, retryOn401 = true): Promise<Blob> {
+  const headers = new Headers()
+  const token = getAccessToken()
+  if (token) headers.set("Authorization", `Bearer ${token}`)
+  const res = await fetch(buildUrl(path), { headers })
+  if (res.status === 401 && retryOn401) {
+    const refreshed = await tryRefresh()
+    if (refreshed) return apiRequestBlob(path, false)
+    writeTokens(null)
+  }
+  if (!res.ok) {
+    const error: ApiError = { status: res.status, message: `Erreur ${res.status}`, detail: null }
+    throw error
+  }
+  return res.blob()
+}
