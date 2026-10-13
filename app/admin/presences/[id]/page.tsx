@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
 import useSWR from "swr"
 import { ArrowLeft, Pencil, ScanLine, Share2, Trash2 } from "lucide-react"
@@ -26,6 +26,7 @@ import {
   getReunion,
   renommerReunion,
   retirerPresence,
+  supprimerReunion,
   telechargerPdfReunion,
   type PresenceDetail,
 } from "@/lib/api/presences"
@@ -46,6 +47,20 @@ export default function ReunionPage() {
   const [titre, setTitre] = useState("")
   const [aRetirer, setARetirer] = useState<PresenceDetail | null>(null)
   const [partage, setPartage] = useState(false)
+  const router = useRouter()
+  const [confirmerSuppression, setConfirmerSuppression] = useState(false)
+
+  async function supprimer() {
+    try {
+      await supprimerReunion(id)
+      toast.success("Réunion supprimée")
+      router.push("/admin/presences")
+    } catch (e) {
+      toast.error((e as ApiError).message ?? "Impossible de supprimer la réunion")
+    } finally {
+      setConfirmerSuppression(false)
+    }
+  }
 
   async function enregistrerTitre() {
     try {
@@ -132,6 +147,10 @@ export default function ReunionPage() {
               <Button onClick={() => void partagerPdf()} disabled={partage}>
                 <Share2 className="mr-2 h-4 w-4" />
                 {partage ? "Préparation…" : "Partager le PDF"}
+              </Button>
+              <Button variant="outline" onClick={() => setConfirmerSuppression(true)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer la réunion
               </Button>
             </>
           ) : null
@@ -221,6 +240,20 @@ export default function ReunionPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={() => void confirmerRetrait()}>Retirer</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={confirmerSuppression} onOpenChange={setConfirmerSuppression}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette réunion ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Les présences de cette réunion seront effacées et ne compteront plus pour les ados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void supprimer()}>Supprimer</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

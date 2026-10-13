@@ -100,6 +100,10 @@ export async function retirerPresence(reunionId: string, userId: string): Promis
   })
 }
 
+export async function supprimerReunion(reunionId: string): Promise<void> {
+  await apiRequest<void>(`${BASE}/reunions/${id(reunionId)}`, { method: "DELETE" })
+}
+
 export function regenererCodeAdo(userId: string): Promise<{ code: string }> {
   return apiRequest<{ code: string }>(`${BASE}/ados/${id(userId)}/code/regenerer`, { method: "POST" })
 }
