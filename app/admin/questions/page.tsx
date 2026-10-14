@@ -5,6 +5,7 @@ import useSWR, { mutate as globalMutate } from "swr"
 import { CheckCircle2, MessageSquareWarning, MoreVertical, Send, Trash2, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
+import { refreshModerationCounts } from "@/components/admin/use-moderation-counts"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,6 +72,7 @@ export default function AdminQuestionsPage() {
   async function refresh() {
     await mutate()
     globalMutate("admin-audit-recent")
+    refreshModerationCounts()
   }
 
   async function reject(question: AdminQuestionAnonyme) {
@@ -97,9 +99,9 @@ export default function AdminQuestionsPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 2"
-        title="Questions anonymes"
-        description="Moderez les questions envoyees par les jeunes et publiez les reponses validees."
+        eyebrow="Modération"
+        title="Toutes les questions"
+        description="L'historique complet des questions anonymes et des réponses publiées."
         actions={
           <Select value={status} onValueChange={(value) => setStatus(value as StatutQuestion | "all")}>
             <SelectTrigger className="w-44 bg-background">

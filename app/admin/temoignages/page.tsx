@@ -4,6 +4,7 @@ import useSWR, { mutate as globalMutate } from "swr"
 import { CheckCircle2, MessageSquareText, MoreVertical, Trash2, XCircle } from "lucide-react"
 import { toast } from "sonner"
 import { AdminPageHeader } from "@/components/admin/admin-page-header"
+import { refreshModerationCounts } from "@/components/admin/use-moderation-counts"
 import { useSession } from "@/lib/auth/session-provider"
 import {
   AlertDialog,
@@ -63,6 +64,7 @@ export default function AdminTemoignagesPage() {
   async function refresh() {
     await mutate()
     globalMutate("admin-audit-recent")
+    refreshModerationCounts()
   }
 
   async function approve(item: AdminTemoignage) {
@@ -99,9 +101,9 @@ export default function AdminTemoignagesPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 3"
-        title="Temoignages"
-        description="Validez ou refusez les temoignages soumis par les jeunes avant publication."
+        eyebrow="Modération"
+        title="Tous les témoignages"
+        description="Les témoignages envoyés par les ados : en attente, approuvés ou refusés."
         actions={
           <Select value={status} onValueChange={(value) => setStatus(value as StatutTemoignage | "all")}>
             <SelectTrigger className="w-44 bg-background">
