@@ -262,3 +262,134 @@
     box-shadow: 0 8px 24px -4px oklch(from var(--color-primary) l c h / 0.18);
   }
 }
+
+/* ─── Admin Kairos ───────────────────────────────────────────────────
+   Thème de l'espace admin uniquement. La classe est posée sur la coque admin
+   et sur <body> tant que l'admin est affiché, pour que les fenêtres (Dialog,
+   Select, menus) rendues hors de la coque prennent aussi ces couleurs.
+   Clair par défaut, sombre si le système le demande. */
+
+.admin-kairos {
+  --k-lime: #c8ff3e;
+  --k-lime-ink: #0c0c12;
+  --k-violet: #6b48f0;
+  --k-violet-soft: #ece6ff;
+  --k-violet-soft-ink: #4b2bc9;
+  --k-success: #187a43;
+  --k-rail: #0c0c12;
+  --k-rail-ink: #a4a4b5;
+  --k-rail-border: transparent;
+  --k-surface: #ffffff;
+  --k-ink: #0c0c12;
+
+  --background: #f4f4f7;
+  --foreground: #0c0c12;
+  --card: #ffffff;
+  --card-foreground: #0c0c12;
+  --popover: #ffffff;
+  --popover-foreground: #0c0c12;
+  --primary: #0c0c12;
+  --primary-foreground: #f4f4f8;
+  --secondary: #ece6ff;
+  --secondary-foreground: #4b2bc9;
+  --muted: #ececf1;
+  --muted-foreground: #5b5b6b;
+  --accent: #ececf1;
+  --accent-foreground: #0c0c12;
+  --destructive: #c2362b;
+  --destructive-foreground: #ffffff;
+  --border: #e3e3ea;
+  --input: #e3e3ea;
+  --ring: #6b48f0;
+  --chart-1: #6b48f0;
+  --chart-2: #0c0c12;
+  --chart-3: #9fd62a;
+  --chart-4: #5b5b6b;
+  --chart-5: #b9a6ff;
+  --radius: 1rem;
+  --sidebar: #0c0c12;
+  --sidebar-foreground: #f4f4f8;
+  --sidebar-primary: #c8ff3e;
+  --sidebar-primary-foreground: #0c0c12;
+  --sidebar-accent: #17171f;
+  --sidebar-accent-foreground: #f4f4f8;
+  --sidebar-border: #24242f;
+  --sidebar-ring: #8e6cff;
+
+  font-family: var(--font-kairos-text), "Onest", ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-kairos {
+    --k-violet: #8e6cff;
+    --k-violet-soft: rgba(142, 108, 255, 0.18);
+    --k-violet-soft-ink: #b9a6ff;
+    --k-success: #4ade80;
+    --k-rail: #0c0c12;
+    --k-rail-border: #24242f;
+    --k-surface: #17171f;
+    --k-ink: #f4f4f8;
+
+    --background: #0c0c12;
+    --foreground: #f4f4f8;
+    --card: #17171f;
+    --card-foreground: #f4f4f8;
+    --popover: #17171f;
+    --popover-foreground: #f4f4f8;
+    --primary: #f4f4f8;
+    --primary-foreground: #0c0c12;
+    --secondary: rgba(142, 108, 255, 0.18);
+    --secondary-foreground: #b9a6ff;
+    --muted: #1e1e28;
+    --muted-foreground: #a4a4b5;
+    --accent: #23232e;
+    --accent-foreground: #f4f4f8;
+    --destructive: #f87171;
+    --destructive-foreground: #0c0c12;
+    --border: #24242f;
+    --input: #2c2c39;
+    --ring: #8e6cff;
+    --chart-1: #8e6cff;
+    --chart-2: #f4f4f8;
+    --chart-3: #c8ff3e;
+    --chart-4: #a4a4b5;
+    --chart-5: #b9a6ff;
+
+    color-scheme: dark;
+  }
+
+  /* Le rouge clair du thème sombre se lit mieux avec un texte foncé. */
+  .admin-kairos .bg-destructive.text-white {
+    color: #0c0c12;
+  }
+}
+
+/* Titres : Unbounded, y compris les anciens titres "font-serif" des pages de « Plus ». */
+.admin-kairos .font-serif,
+.admin-kairos .font-display,
+.admin-kairos .font-kairos-display {
+  font-family: var(--font-kairos-display), "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.admin-kairos .font-sans {
+  font-family: var(--font-kairos-text), "Onest", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Pastille citron de la navigation : elle glisse vers l'entrée active. */
+.kairos-nav-pill {
+  transition:
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kairos-nav-pill {
+    transition: none;
+  }
+}
