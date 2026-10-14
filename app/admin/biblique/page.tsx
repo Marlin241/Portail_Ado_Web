@@ -165,9 +165,9 @@ export default function AdminBibliquePage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 4"
-        title="Biblique etendu"
-        description="Themes mensuels, quiz bibliques publies aux ados, ado mis en avant et classement."
+        eyebrow="Plus"
+        title="Biblique étendu"
+        description="Thèmes du mois, quiz bibliques publiés aux ados, ado mis en avant et classement."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => setThemeDialog("new")}>

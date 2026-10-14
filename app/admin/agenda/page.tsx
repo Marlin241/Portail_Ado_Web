@@ -106,9 +106,9 @@ export default function AdminAgendaPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 2"
+        eyebrow="Plus"
         title="Agenda spirituel"
-        description="Programmez les meditations quotidiennes et les surcharges datees visibles par les jeunes."
+        description="Les méditations quotidiennes et les messages datés que voient les ados."
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -444,7 +444,7 @@ function MeditationDialog({
                 onBlur={(event) => normalizeDateInput(event.target.value)}
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Exemple : 05-09 pour le 9 mai. Si vous collez 09/05/2026, il sera converti en
+                Exemple : 05-09 pour le 9 mai. Si tu colles 09/05/2026, il sera converti en
                 05-09 avec l'annee 2026.
               </p>
             </div>

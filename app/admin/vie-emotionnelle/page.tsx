@@ -137,9 +137,9 @@ export default function AdminVieEmotionnellePage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 2"
-        title="Vie emotionnelle"
-        description="Gerez les categories, articles, videos et temoignages relationnels."
+        eyebrow="Plus"
+        title="Vie émotionnelle"
+        description="Catégories, articles, vidéos et témoignages sur les relations."
         actions={
           <Button onClick={() => setCreating(true)} disabled={categories.length === 0}>
             <Plus className="mr-2 h-4 w-4" />

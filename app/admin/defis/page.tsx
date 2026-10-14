@@ -78,9 +78,9 @@ export default function AdminDefisPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 3"
-        title="Defis de la semaine"
-        description="Planifiez les defis hebdomadaires visibles cote ado a partir de leur semaine."
+        eyebrow="Plus"
+        title="Défis de la semaine"
+        description="Le défi de chaque semaine, visible par les ados à partir de sa semaine."
         actions={
           <Button onClick={() => setCreating(true)}>
             <CalendarPlus className="mr-2 h-4 w-4" />

@@ -116,9 +116,9 @@ export default function AdminCreativitePage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 4"
-        title="Creativite"
-        description="Moderez les creations ados, gerez les categories et figez le talent du mois."
+        eyebrow="Plus"
+        title="Créativité"
+        description="Les créations des ados à valider, leurs catégories et le talent du mois."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={freezeTalent}>

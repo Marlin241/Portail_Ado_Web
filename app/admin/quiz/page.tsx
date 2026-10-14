@@ -86,9 +86,9 @@ export default function AdminQuizPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 2"
+        eyebrow="Plus"
         title="Quiz personnalite"
-        description="Creez les quiz, puis gerez les profils et les questions dans le detail."
+        description="Les quiz de personnalité : crée un quiz, puis ses profils et ses questions dans le détail."
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="mr-2 h-4 w-4" />

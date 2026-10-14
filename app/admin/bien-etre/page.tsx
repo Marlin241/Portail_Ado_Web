@@ -121,9 +121,9 @@ export default function AdminBienEtrePage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 3"
-        title="Bien-etre"
-        description="Gerez les articles Mode, Sante et Bien-etre visibles par les ados."
+        eyebrow="Plus"
+        title="Bien-être"
+        description="Les articles mode, santé et bien-être visibles par les ados."
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="mr-2 h-4 w-4" />

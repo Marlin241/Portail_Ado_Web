@@ -108,9 +108,9 @@ export default function AdminMusiquePage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Sprint 4"
+        eyebrow="Plus"
         title="Musique gospel"
-        description="Gerez les playlists, artistes, genres, morceaux et propositions ados."
+        description="Playlists, artistes, genres, morceaux et propositions des ados."
         actions={
           <Select value={proposalStatus} onValueChange={(value) => setProposalStatus(value as StatutPropositionMusique | "all")}>
             <SelectTrigger className="w-48 bg-background">
