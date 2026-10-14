@@ -1,15 +1,22 @@
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 
 interface AdminPageHeaderProps {
   eyebrow?: string
   title: string
   description?: string
   actions?: ReactNode
+  className?: string
 }
 
-export function AdminPageHeader({ eyebrow, title, description, actions }: AdminPageHeaderProps) {
+export function AdminPageHeader({ eyebrow, title, description, actions, className }: AdminPageHeaderProps) {
   return (
-    <div className="flex flex-col gap-5 px-5 pb-2 pt-10 md:flex-row md:items-end md:justify-between md:px-10 lg:pt-14">
+    <div
+      className={cn(
+        "flex flex-col gap-5 px-5 pb-2 pt-10 md:flex-row md:items-end md:justify-between md:px-10 lg:pt-14",
+        className,
+      )}
+    >
       <div className="flex min-w-0 flex-col gap-2">
         {eyebrow ? (
           <span className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.08em]">

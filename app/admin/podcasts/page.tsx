@@ -93,9 +93,8 @@ export default function AdminPodcastsPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Podcasts"
-        title="Series et episodes"
-        description="Creez des series audio, publiez des episodes et controlez leur visibilite."
+        title="Podcasts"
+        description="Les séries audio, leurs épisodes et ce qui est visible par les ados."
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -115,7 +114,7 @@ export default function AdminPodcastsPage() {
               </div>
               <h3 className="font-serif text-lg font-semibold">Aucune serie pour le moment</h3>
               <p className="text-muted-foreground max-w-md text-sm">
-                Creez votre premiere serie pour commencer a publier des episodes audio.
+                Crée une première série pour publier des épisodes audio.
               </p>
               <Button onClick={() => setCreating(true)}>
                 <Plus className="mr-2 h-4 w-4" />

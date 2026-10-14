@@ -287,7 +287,7 @@ export default function AdminPodcastDetailPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-5 pb-10 md:px-10">
       <div>
         <button
           type="button"
@@ -298,8 +298,9 @@ export default function AdminPodcastDetailPage() {
         </button>
 
         <AdminPageHeader
+          className="-mx-5 pt-0 md:-mx-10 lg:pt-0"
           title={podcast.titre}
-          description={podcast.description ?? "Gérez les épisodes de cette série."}
+          description={podcast.description ?? "Les épisodes de cette série."}
           actions={
             <Button onClick={openCreate}>
               <Plus className="size-4" /> Nouvel épisode
@@ -331,7 +332,7 @@ export default function AdminPodcastDetailPage() {
           </EmptyMedia>
           <EmptyTitle>Aucun épisode pour l&apos;instant</EmptyTitle>
           <EmptyDescription>
-            Créez votre premier épisode pour commencer à publier cette série.
+            Crée un premier épisode pour publier cette série.
           </EmptyDescription>
           <EmptyContent>
             <Button onClick={openCreate}>

@@ -95,6 +95,10 @@ export default function AdminBooksPage() {
   const [deleting, setDeleting] = useState<Book | null>(null)
   const [managingCategories, setManagingCategories] = useState(false)
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("nouveau") === "1") setCreating(true)
+  }, [])
+
   const { data: books, mutate: refreshBooks } = useSWR("admin-books", () => listBooks({ limit: 100 }))
   const { data: categories, mutate: refreshCategories } = useSWR("admin-categories", () => listCategories())
 
@@ -118,9 +122,8 @@ export default function AdminBooksPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Bibliotheque"
-        title="Livres et categories"
-        description="Gerez la liste des livres, leurs metadonnees, fichiers (PDF / ePub) et classez-les par categorie."
+        title="Livres"
+        description="Les livres de la bibliothèque, leurs fichiers (PDF / ePub) et leurs catégories."
         actions={
           <>
             <Button variant="outline" onClick={() => setManagingCategories(true)}>
@@ -135,7 +138,7 @@ export default function AdminBooksPage() {
         }
       />
 
-      <div className="px-6 py-6 md:px-10 md:py-8">
+      <div className="px-5 py-6 md:px-10 md:py-8">
         <Card className="border-border/70">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -143,9 +146,9 @@ export default function AdminBooksPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Livre</TableHead>
-                    <TableHead>Categorie</TableHead>
-                    <TableHead>Formats</TableHead>
-                    <TableHead>Statut</TableHead>
+                    <TableHead className="hidden md:table-cell">Catégorie</TableHead>
+                    <TableHead className="hidden md:table-cell">Formats</TableHead>
+                    <TableHead className="hidden md:table-cell">Statut</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -183,20 +186,25 @@ export default function AdminBooksPage() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex min-w-0 flex-col">
+                            <div className="flex min-w-0 max-w-[200px] flex-col sm:max-w-none">
                               <span className="truncate font-medium">{book.titre}</span>
                               <span className="text-muted-foreground truncate text-xs">{book.auteur}</span>
+                              <span className="text-muted-foreground truncate text-xs md:hidden">
+                                {[book.categorie?.nom, book.formats_disponibles.join(", ").toUpperCase(), book.est_recommande ? "Recommandé" : null]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {book.categorie ? (
                             <Badge variant="outline">{book.categorie.nom}</Badge>
                           ) : (
                             <span className="text-muted-foreground text-xs">-</span>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {book.formats_disponibles.length === 0 ? (
                               <span className="text-muted-foreground text-xs">Aucun</span>
@@ -209,7 +217,7 @@ export default function AdminBooksPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {book.est_recommande ? (
                             <Badge className="bg-accent/30 text-accent-foreground border-0">
                               <Sparkles className="mr-1 h-3 w-3" />
