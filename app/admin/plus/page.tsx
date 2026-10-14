@@ -4,6 +4,7 @@ import Link from "next/link"
 import useSWR from "swr"
 import { adminListModerationPending } from "@/lib/api/admin-misc"
 import type { ModerationPendingType } from "@/lib/api/types"
+import { useModerationCounts } from "@/components/admin/use-moderation-counts"
 import { useSession } from "@/lib/auth/session-provider"
 
 interface Section {
@@ -11,6 +12,12 @@ interface Section {
   titre: string
   description: string
   attente?: ModerationPendingType
+}
+
+const MODERATION: Section = {
+  href: "/admin/moderation",
+  titre: "Modération",
+  description: "Témoignages et questions envoyés par les ados.",
 }
 
 const GROUPES: { titre: string; sections: Section[] }[] = [
@@ -52,8 +59,9 @@ function useEnAttente(type: ModerationPendingType | undefined) {
   return data
 }
 
-function Ligne({ section }: { section: Section }) {
-  const attente = useEnAttente(section.attente)
+function Ligne({ section, compte }: { section: Section; compte?: number }) {
+  const attenteType = useEnAttente(section.attente)
+  const attente = compte ?? attenteType
   return (
     <li className="border-border border-b">
       <Link href={section.href} className="group flex min-h-16 items-center gap-4 py-4 md:py-5">
@@ -78,6 +86,7 @@ function Ligne({ section }: { section: Section }) {
 
 export default function AdminPlusPage() {
   const { user, logout } = useSession()
+  const counts = useModerationCounts({ questions: true })
 
   return (
     <div className="mx-auto flex w-full max-w-[920px] flex-col gap-10 px-5 pb-6 pt-14 md:px-10 lg:px-[72px]">
@@ -90,6 +99,12 @@ export default function AdminPlusPage() {
           Les sections moins fréquentes. Rien n&apos;a disparu : chaque page garde ses fonctions.
         </p>
       </header>
+
+      <section aria-label="À traiter" className="flex flex-col">
+        <ul className="border-border border-t">
+          <Ligne section={MODERATION} compte={counts.total || undefined} />
+        </ul>
+      </section>
 
       {GROUPES.map((groupe) => (
         <section key={groupe.titre} aria-label={groupe.titre} className="flex flex-col">

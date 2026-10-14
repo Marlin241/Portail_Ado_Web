@@ -275,7 +275,10 @@ function RailLink({
 export function AdminBottomBar() {
   const { items, active, pending, moderatorOnly } = useAdminNav(20)
   const { logout } = useSession()
-  const { containerRef, register, pill } = useSlidingPill(active)
+  // Sur téléphone, Modération vit dans « Plus » : la barre reste légère.
+  const barItems = moderatorOnly ? items : items.filter((i) => i.key !== "moderation")
+  const barActive = !moderatorOnly && active === "moderation" ? "plus" : active
+  const { containerRef, register, pill } = useSlidingPill(barActive)
 
   return (
     <nav
@@ -288,15 +291,16 @@ export function AdminBottomBar() {
     >
       <div ref={containerRef} className="relative flex">
         {pill}
-        {items.map((item) => {
-          const isActive = active === item.key
+        {barItems.map((item) => {
+          const isActive = barActive === item.key
+          const showCount = item.key === "plus" && !moderatorOnly
           return (
             <Link
               key={item.key}
               ref={register(item.key)}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              aria-label={linkLabel(item, pending)}
+              aria-label={showCount && pending ? `Plus, ${pending} à traiter` : linkLabel(item, pending)}
               data-space={item.key}
               className={cn(
                 "relative z-10 min-w-0 flex-1 rounded-[22px] px-0 py-[9px] text-center text-[10px] font-semibold leading-tight tracking-[-0.01em] outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
@@ -305,7 +309,7 @@ export function AdminBottomBar() {
             >
               <span className="mb-[3px] block">{item.icon}</span>
               <span className="block overflow-hidden whitespace-nowrap">{moderatorOnly ? item.label : (item.short ?? item.label)}</span>
-              {item.key === "moderation" ? (
+              {item.key === "moderation" || showCount ? (
                 <CountBadge value={pending} className="right-[calc(50%-24px)] top-0.5" />
               ) : null}
             </Link>
