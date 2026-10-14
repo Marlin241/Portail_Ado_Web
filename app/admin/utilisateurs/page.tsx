@@ -117,9 +117,9 @@ function formatUserDate(value?: string | null) {
 
 function DetailLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium">{value}</span>
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="min-w-0 truncate text-right font-medium">{value}</span>
     </div>
   )
 }
@@ -170,7 +170,7 @@ function UserDetailsDialog({
 }) {
   return (
     <Dialog open={!!user} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">
             {user ? `${user.first_name} ${user.last_name}` : "Fiche"}
@@ -181,17 +181,15 @@ function UserDetailsDialog({
         </DialogHeader>
 
         {user ? (
-          <div className="grid max-h-[60vh] gap-3 overflow-y-auto text-sm">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
-              <span className="text-muted-foreground">Statut</span>
-              {statusBadge(user.account_status)}
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
-              <span className="text-muted-foreground">Role</span>
-              {roleBadge(user.role, user.is_superadmin)}
+          <div className="divide-border grid divide-y text-sm">
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <span className="text-muted-foreground">Compte</span>
+              <span className="flex gap-1.5">
+                {statusBadge(user.account_status)}
+                {roleBadge(user.role, user.is_superadmin)}
+              </span>
             </div>
             <DetailLine label="Email" value={user.email} />
-            <DetailLine label="Nom d'utilisateur" value={`@${user.username}`} />
             <DetailLine label="Date de naissance" value={formatUserDate(user.birth_date)} />
             <DetailLine
               label="Activation"
@@ -200,11 +198,11 @@ function UserDetailsDialog({
             <DetailLine label="Créé le" value={formatUserDate(user.created_at)} />
             <DetailLine label="Activé le" value={formatUserDate(user.activated_at)} />
             {activity ? (
-              <div className="mt-2 rounded-lg border border-border/70 p-3">
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="pt-3">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Activité
                 </h3>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="divide-border grid divide-y sm:grid-cols-2 sm:gap-x-6">
                   <DetailLine label="Créations" value={`${activity.creations_approuvees}/${activity.creations_soumises}`} />
                   <DetailLine
                     label="Quiz terminés"
