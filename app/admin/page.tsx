@@ -1,292 +1,220 @@
 "use client"
 
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState, type FormEvent, type ReactNode } from "react"
 import useSWR from "swr"
-import {
-  BookOpen,
-  BookOpenCheck,
-  Clock,
-  Headphones,
-  Inbox,
-  Music2,
-  Palette,
-  Podcast,
-  ShieldAlert,
-  UserCheck,
-  UserPlus,
-  Users,
-} from "lucide-react"
-import { AdminPageHeader } from "@/components/admin/admin-page-header"
-import { StatCard } from "@/components/admin/stat-card"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { adminFetchStats, adminListAuditLogs, adminListModerationPending } from "@/lib/api/admin-misc"
-import type { ModerationPendingType } from "@/lib/api/types"
+import { useModerationCounts } from "@/components/admin/use-moderation-counts"
+import { reunionAujourdhui } from "@/lib/api/presences"
+import { cn } from "@/lib/utils"
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+function dateDuJour(d: Date) {
+  const texte = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+  return texte.charAt(0).toUpperCase() + texte.slice(1)
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  "user.create": "Creation utilisateur",
-  "user.update": "Modification utilisateur",
-  "user.suspend": "Suspension utilisateur",
-  "user.reactivate": "Reactivation utilisateur",
-  "user.reset_password": "Reinitialisation MDP",
-  "user.delete": "Suppression utilisateur",
-  "book.create": "Ajout de livre",
-  "book.update": "Modification livre",
-  "book.delete": "Suppression livre",
-  "book.upload": "Upload fichier livre",
-  "category.create": "Creation categorie",
-  "category.delete": "Suppression categorie",
-  "podcast.create": "Creation podcast",
-  "podcast.update": "Modification podcast",
-  "podcast.delete": "Suppression podcast",
-  "podcast.episode.create": "Nouvel episode",
-  "podcast.episode.update": "Modification episode",
-  "podcast.episode.delete": "Suppression episode",
-  "podcast.episode.publish": "Publication episode",
-  "podcast.episode.unpublish": "Depublication episode",
-  "podcast.episode.upload": "Upload audio",
-  "auth.login": "Connexion admin",
-  question_answered: "Question repondue",
-  question_rejected: "Question rejetee",
-  question_deleted: "Question supprimee",
-  temoignage_approved: "Temoignage approuve",
-  temoignage_rejected: "Temoignage rejete",
-  temoignage_deleted: "Temoignage supprime",
-  bien_etre_article_created: "Article bien-etre cree",
-  bien_etre_article_updated: "Article bien-etre modifie",
-  bien_etre_article_deleted: "Article bien-etre supprime",
-  defi_created: "Defi cree",
-  defi_updated: "Defi modifie",
-  defi_deleted: "Defi supprime",
-  exploit_approved: "Exploit approuve",
-  exploit_rejected: "Exploit rejete",
-  exploit_deleted: "Exploit supprime",
-  theme_biblique_created: "Theme biblique cree",
-  theme_biblique_deleted: "Theme biblique supprime",
-  quiz_biblique_created: "Quiz biblique cree",
-  quiz_biblique_deleted: "Quiz biblique supprime",
-  ado_mis_en_avant_created: "Ado mis en avant",
-  ado_mis_en_avant_deleted: "Ado mis en avant retire",
-  creation_approved: "Creation approuvee",
-  creation_rejected: "Creation rejetee",
-  creation_deleted: "Creation supprimee",
-  artiste_created: "Artiste gospel cree",
-  artiste_updated: "Artiste gospel modifie",
-  artiste_deleted: "Artiste gospel supprime",
-  playlist_musicale_created: "Playlist creee",
-  playlist_musicale_updated: "Playlist modifiee",
-  playlist_musicale_deleted: "Playlist supprimee",
-  morceau_created: "Morceau cree",
-  morceau_deleted: "Morceau supprime",
-  proposition_musique_approved: "Proposition musique approuvee",
-  proposition_musique_rejected: "Proposition musique rejetee",
+function phraseDuJour(jour: number) {
+  if (jour === 6) return "C'est réunion aujourd'hui."
+  if (jour === 5) return "Réunion demain."
+  if (jour === 0) return "Belle semaine qui commence."
+  return "Prochaine réunion samedi."
 }
 
-const PENDING_LABELS: Record<ModerationPendingType, string> = {
-  question: "Question",
-  temoignage: "Temoignage",
-  exploit: "Exploit",
-  creation: "Creation",
-  proposition_musique: "Proposition musique",
-}
-
-export default function AdminDashboardPage() {
-  const { data: stats, isLoading } = useSWR("admin-stats", () => adminFetchStats())
-  const { data: audit } = useSWR("admin-audit-recent", () =>
-    adminListAuditLogs({ limit: 8 }),
+function Arrow({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={cn("shrink-0", className)}
+    >
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
   )
-  const { data: pending } = useSWR(["admin-moderation-pending", "all"], () =>
-    adminListModerationPending({ limit: 6 }),
+}
+
+const ACTION_PLEINE =
+  "inline-flex h-12 items-center rounded-[14px] bg-foreground px-5 text-[15px] font-semibold text-background transition-opacity hover:opacity-90"
+const ACTION_CONTOUR =
+  "inline-flex h-12 items-center rounded-[14px] border border-foreground px-5 text-[15px] font-semibold transition-colors hover:bg-foreground hover:text-background"
+
+function ATraiter({ n }: { n: number }) {
+  return n > 0 ? (
+    <span className="shrink-0 rounded-full bg-[var(--k-violet-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--k-violet-soft-ink)] md:px-3.5 md:py-2 md:text-sm">
+      {n} à traiter
+    </span>
+  ) : (
+    <span className="text-muted-foreground shrink-0 text-[13px] font-medium md:text-sm">Rien à traiter</span>
   )
+}
+
+function Ligne({
+  titre,
+  description,
+  courte,
+  href,
+  fin,
+  actions,
+}: {
+  titre: string
+  description: string
+  courte: string
+  href: string
+  fin?: ReactNode
+  actions: ReactNode
+}) {
+  return (
+    <div className="border-border border-b">
+      {/* Téléphone : toute la ligne est un lien. */}
+      <Link href={href} className="flex min-h-12 items-center justify-between gap-3 py-5 md:hidden">
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-kairos-display text-[15px] font-bold">{titre}</span>
+          <span className="text-muted-foreground text-[13px]">{courte}</span>
+        </span>
+        {fin ?? (
+          <span className="text-muted-foreground text-xl" aria-hidden="true">
+            ›
+          </span>
+        )}
+      </Link>
+      {/* PC : la ligne propose directement les actions. */}
+      <div className="hidden items-center gap-6 py-6 md:flex">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <Link href={href} className="font-kairos-display w-fit text-lg font-bold hover:underline">
+            {titre}
+          </Link>
+          <span className="text-muted-foreground text-[15px]">{description}</span>
+        </div>
+        {fin}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">{actions}</div>
+      </div>
+    </div>
+  )
+}
+
+export default function AdminAujourdhuiPage() {
+  const router = useRouter()
+  const [maintenant] = useState(() => new Date())
+  const samedi = maintenant.getDay() === 6
+  const [recherche, setRecherche] = useState("")
+  const counts = useModerationCounts()
+  const { data: reunion } = useSWR("presences-aujourdhui", reunionAujourdhui, { shouldRetryOnError: false })
+
+  function chercher(e: FormEvent) {
+    e.preventDefault()
+    const q = recherche.trim()
+    router.push(q ? `/admin/utilisateurs?q=${encodeURIComponent(q)}` : "/admin/utilisateurs")
+  }
+
+  const presents = reunion?.nb_presents ?? 0
+  const action = samedi
+    ? {
+        href: "/admin/presences/scanner",
+        titre: "Scanner les présences",
+        detail:
+          presents > 0
+            ? `${presents} présent${presents > 1 ? "s" : ""} pour l'instant. Continue avec la caméra.`
+            : "Ouvre la caméra et passe les cartes une par une.",
+      }
+    : {
+        href: "/admin/presences",
+        titre: "Voir les présences",
+        detail: "Les réunions passées et la liste des présents.",
+      }
 
   return (
-    <>
-      <AdminPageHeader
-        eyebrow="Tableau de bord"
-        title="Vue d'ensemble de la plateforme"
-        description="Statistiques globales, activite recente et alertes de moderation pour le Portail Ados Bethel."
-      />
+    <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-6 px-5 pb-6 pt-14 md:gap-10 md:px-10 lg:px-[72px]">
+      <header className="flex flex-col gap-2 md:gap-2.5">
+        <p className="text-muted-foreground text-xs font-semibold uppercase tracking-[0.08em] md:text-sm">
+          {dateDuJour(maintenant)}
+        </p>
+        <h1 className="font-kairos-display text-[28px] font-extrabold leading-[1.15] md:text-[44px] md:leading-[1.1]">
+          {phraseDuJour(maintenant.getDay())}
+        </h1>
+      </header>
 
-      <div className="px-6 py-6 md:px-10 md:py-8">
-        <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Utilisateurs
-          </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <StatCard
-              label="Total inscrits"
-              value={isLoading ? "..." : (stats?.users_total ?? 0)}
-              icon={Users}
-            />
-            <StatCard
-              label="Comptes actifs"
-              value={isLoading ? "..." : (stats?.users_active ?? 0)}
-              icon={UserCheck}
-              hint="Peuvent se connecter librement"
-            />
-            <StatCard
-              label="En attente d'activation"
-              value={isLoading ? "..." : (stats?.users_pending ?? 0)}
-              icon={UserPlus}
-              hint="Doivent changer leur mot de passe"
-            />
-            <StatCard
-              label="Suspendus"
-              value={isLoading ? "..." : (stats?.users_suspended ?? 0)}
-              icon={ShieldAlert}
-              hint="Acces bloque par un admin"
-            />
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Contenu publie
-          </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <StatCard
-              label="Livres"
-              value={isLoading ? "..." : (stats?.books_total ?? 0)}
-              hint={`${stats?.books_recommended ?? 0} recommandes - ${stats?.categories_total ?? 0} categories`}
-              icon={BookOpen}
-            />
-            <StatCard
-              label="Podcasts actifs"
-              value={isLoading ? "..." : `${stats?.podcasts_active ?? 0}/${stats?.podcasts_total ?? 0}`}
-              icon={Podcast}
-            />
-            <StatCard
-              label="Episodes publies"
-              value={isLoading ? "..." : `${stats?.episodes_published ?? 0}/${stats?.episodes_total ?? 0}`}
-              icon={Headphones}
-            />
-            <StatCard
-              label="Sessions 7 j"
-              value={
-                isLoading
-                  ? "..."
-                  : `${(stats?.reading_sessions_last_7d ?? 0) + (stats?.audio_sessions_last_7d ?? 0)}`
-              }
-              hint={`${stats?.reading_sessions_last_7d ?? 0} lecture - ${stats?.audio_sessions_last_7d ?? 0} audio`}
-              icon={Clock}
-            />
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Sprint 4
-          </h2>
-          <div className="grid gap-4 md:grid-cols-4">
-            <StatCard
-              label="Creations en attente"
-              value={isLoading ? "..." : (stats?.creations_pending ?? 0)}
-              hint={`${stats?.creations_approuvees_total ?? 0} creations approuvees`}
-              icon={Palette}
-            />
-            <StatCard
-              label="Propositions musique"
-              value={isLoading ? "..." : (stats?.propositions_musique_pending ?? 0)}
-              hint={`${stats?.morceaux_total ?? 0} morceaux - ${stats?.playlists_total ?? 0} playlists`}
-              icon={Music2}
-            />
-            <StatCard
-              label="Quiz bibliques 7 j"
-              value={isLoading ? "..." : (stats?.quiz_resultats_7j ?? 0)}
-              icon={BookOpenCheck}
-            />
-            <StatCard
-              label="Engagement 7 j"
-              value={
-                isLoading
-                  ? "..."
-                  : (stats?.creation_likes_7j ?? 0) + (stats?.morceau_ecoutes_7j ?? 0)
-              }
-              hint={`${stats?.creation_likes_7j ?? 0} likes creations - ${stats?.morceau_ecoutes_7j ?? 0} ecoutes`}
-              icon={Clock}
-            />
-          </div>
-        </section>
-
-        <section className="mt-10">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="border-border/70 lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="font-serif text-lg">Activite recente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="divide-y divide-border">
-                  {(audit?.items ?? []).map((log) => (
-                    <li key={log.id} className="flex items-center justify-between py-3">
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium">
-                          {ACTION_LABELS[log.action] ?? log.action}
-                        </span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          par {log.actor_email}
-                          {log.entity_id ? ` - ${log.entity_type}#${log.entity_id.slice(0, 6)}` : ""}
-                        </span>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDateTime(log.created_at)}
-                      </span>
-                    </li>
-                  ))}
-                  {audit && audit.items.length === 0 ? (
-                    <li className="py-6 text-center text-sm text-muted-foreground">
-                      Aucune activite enregistree pour le moment.
-                    </li>
-                  ) : null}
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70">
-              <CardHeader>
-                <CardTitle className="font-serif text-lg">Moderation en attente</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between rounded-lg border border-border/70 p-3">
-                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Inbox className="h-4 w-4" />
-                    Total
-                  </span>
-                  <Badge variant="secondary">{pending?.total ?? 0}</Badge>
-                </div>
-                <ul className="divide-y divide-border">
-                  {(pending?.items ?? []).map((item) => (
-                    <li key={`${item.type}-${item.id}`} className="py-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{item.titre_court}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {PENDING_LABELS[item.type]}
-                            {item.username_auteur ? ` - @${item.username_auteur}` : ""}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{formatDateTime(item.created_at)}</Badge>
-                      </div>
-                    </li>
-                  ))}
-                  {pending && pending.items.length === 0 ? (
-                    <li className="py-6 text-center text-sm text-muted-foreground">
-                      Rien a moderer pour le moment.
-                    </li>
-                  ) : null}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+      <div className="flex flex-col gap-3">
+        <Link
+          href={action.href}
+          data-testid="action-principale"
+          className="group flex items-center justify-between gap-3 rounded-[24px] bg-[var(--k-lime)] p-[22px] text-[#0C0C12] outline-none transition-transform focus-visible:ring-4 focus-visible:ring-[var(--ring)] active:scale-[0.99] md:gap-6 md:rounded-[28px] md:px-8 md:py-7"
+        >
+          <span className="flex min-w-0 flex-col gap-0.5 md:gap-1">
+            <span className="font-kairos-display text-lg font-bold md:text-[26px]">{action.titre}</span>
+            <span className="text-sm md:text-base">{action.detail}</span>
+          </span>
+          <Arrow className="h-7 w-7 transition-transform group-hover:translate-x-1 md:h-10 md:w-10" />
+        </Link>
+        {!samedi ? (
+          <Link
+            href="/admin/presences/scanner"
+            className="text-muted-foreground hover:text-foreground w-fit px-1 py-1 text-sm font-medium underline underline-offset-4"
+          >
+            Une réunion exceptionnelle ? Scanner maintenant
+          </Link>
+        ) : null}
       </div>
-    </>
+
+      <section aria-label="Autres tâches" className="border-border flex flex-col border-t">
+        <Ligne
+          titre="Ados"
+          description="Trouver quelqu'un ou ajouter un nouveau compte."
+          courte="Trouver ou ajouter un compte"
+          href="/admin/utilisateurs"
+          actions={
+            <>
+              <form onSubmit={chercher} role="search">
+                <label className="sr-only" htmlFor="recherche-ado">
+                  Rechercher un ado
+                </label>
+                <input
+                  id="recherche-ado"
+                  type="search"
+                  value={recherche}
+                  onChange={(e) => setRecherche(e.target.value)}
+                  placeholder="Rechercher un ado"
+                  className="border-border bg-card placeholder:text-muted-foreground focus-visible:ring-ring/40 h-12 w-[220px] rounded-[14px] border px-4 text-[15px] outline-none focus-visible:ring-4 xl:w-[260px]"
+                />
+              </form>
+              <Link href="/admin/utilisateurs?nouveau=1" className={ACTION_PLEINE}>
+                Ajouter un ado
+              </Link>
+            </>
+          }
+        />
+        <Ligne
+          titre="Contenus"
+          description="Ce que les ados voient dans l'app : livres et podcasts."
+          courte="Livres et podcasts de l'app"
+          href="/admin/contenus"
+          actions={
+            <>
+              <Link href="/admin/livres?nouveau=1" className={ACTION_CONTOUR}>
+                Ajouter un livre
+              </Link>
+              <Link href="/admin/podcasts" className={ACTION_CONTOUR}>
+                Gérer les podcasts
+              </Link>
+            </>
+          }
+        />
+        <Ligne
+          titre="Modération"
+          description="Témoignages et questions envoyés par les ados."
+          courte="Témoignages et questions"
+          href="/admin/moderation"
+          fin={counts.total !== undefined ? <ATraiter n={counts.total} /> : undefined}
+          actions={
+            <Link href="/admin/moderation" className={ACTION_PLEINE}>
+              Ouvrir la file
+            </Link>
+          }
+        />
+      </section>
+    </div>
   )
 }

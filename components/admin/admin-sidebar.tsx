@@ -280,9 +280,9 @@ export function AdminBottomBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-3.5 bottom-[calc(14px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-[560px] rounded-[26px] border border-border bg-[var(--k-surface)] p-1.5 shadow-[0_10px_30px_-12px_rgba(12,12,18,0.35)]"
+      className="fixed inset-x-2.5 bottom-[calc(12px+env(safe-area-inset-bottom))] z-40 mx-auto max-w-[560px] rounded-[26px] border border-border bg-[var(--k-surface)] p-1 shadow-[0_10px_30px_-12px_rgba(12,12,18,0.35)]"
     >
-      <div ref={containerRef} className="relative flex gap-0.5">
+      <div ref={containerRef} className="relative flex">
         {pill}
         {items.map((item) => {
           const isActive = active === item.key
@@ -295,12 +295,12 @@ export function AdminBottomBar() {
               aria-label={linkLabel(item, pending)}
               data-space={item.key}
               className={cn(
-                "relative z-10 min-w-0 flex-1 rounded-[20px] px-0.5 py-[9px] text-center text-[10px] font-semibold leading-tight outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                "relative z-10 min-w-0 flex-1 rounded-[22px] px-0 py-[9px] text-center text-[10px] font-semibold leading-tight tracking-[-0.01em] outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
                 isActive ? "text-[#0C0C12]" : "text-muted-foreground",
               )}
             >
               <span className="mb-[3px] block">{item.icon}</span>
-              <span className="block truncate">{item.short ?? item.label}</span>
+              <span className="block overflow-hidden whitespace-nowrap">{item.short ?? item.label}</span>
               {item.key === "moderation" ? (
                 <CountBadge value={pending} className="right-[calc(50%-24px)] top-0.5" />
               ) : null}
