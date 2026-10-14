@@ -43,6 +43,10 @@ export default function ReunionPage() {
   const { data: reunion, error, mutate } = useSWR(id ? ["presences-reunion", id] : null, () =>
     getReunion(id),
   )
+  // Le scanner enregistre toujours dans la réunion du jour : on ne le propose que pour elle.
+  const estDuJour =
+    !!reunion &&
+    reunion.jour === new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Dakar" })
   const [edition, setEdition] = useState(false)
   const [titre, setTitre] = useState("")
   const [aRetirer, setARetirer] = useState<PresenceDetail | null>(null)
@@ -164,12 +168,18 @@ export default function ReunionPage() {
               Toutes les réunions
             </Link>
           </Button>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/admin/presences/scanner">
-              <ScanLine className="mr-1 h-4 w-4" />
-              Scanner
-            </Link>
-          </Button>
+          {estDuJour ? (
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/admin/presences/scanner">
+                <ScanLine className="mr-1 h-4 w-4" />
+                Scanner
+              </Link>
+            </Button>
+          ) : reunion ? (
+            <p className="self-center text-sm text-muted-foreground">
+              Réunion passée : la liste ne peut plus être modifiée.
+            </p>
+          ) : null}
         </div>
 
         {edition ? (
