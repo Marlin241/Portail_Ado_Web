@@ -341,7 +341,7 @@ function PodcastDialog({
             {isEdit ? "Modifier la serie" : "Nouvelle serie"}
           </DialogTitle>
           <DialogDescription>
-            Vous pouvez renseigner une URL d&apos;image ou televerser directement une pochette.
+            Tu peux indiquer l&apos;adresse d&apos;une image ou envoyer directement une pochette.
           </DialogDescription>
         </DialogHeader>
 

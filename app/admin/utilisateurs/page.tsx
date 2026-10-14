@@ -100,7 +100,7 @@ function roleBadge(role: UserRole, superadmin: boolean) {
   const map: Record<UserRole, string> = {
     admin: "Admin",
     moderator: "Modérateur",
-    user: "Utilisateur",
+    user: "Ado",
   }
 
   return <Badge variant="outline">{map[role]}</Badge>
@@ -124,27 +124,64 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   )
 }
 
+interface FicheActions {
+  onEdit: (user: User) => void
+  onResetPassword: (user: User) => void
+  onChangeQr: (user: User) => void
+  onSuspend: (user: User) => void
+  onReactivate: (user: User) => void
+  onDelete: (user: User) => void
+}
+
+function ActionFiche({
+  children,
+  onClick,
+  disabled,
+  danger,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+  disabled?: boolean
+  danger?: boolean
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      disabled={disabled}
+      onClick={onClick}
+      className={`h-12 justify-start rounded-[14px] px-4 text-[15px] ${danger ? "text-destructive hover:text-destructive" : ""}`}
+    >
+      {children}
+    </Button>
+  )
+}
+
 function UserDetailsDialog({
   user,
   activity,
   onClose,
+  actions,
 }: {
   user: User | null
   activity: UserActivity | null
   onClose: () => void
+  actions: FicheActions
 }) {
   return (
     <Dialog open={!!user} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-xl">Detail du compte</DialogTitle>
+          <DialogTitle className="font-serif text-xl">
+            {user ? `${user.first_name} ${user.last_name}` : "Fiche"}
+          </DialogTitle>
           <DialogDescription>
-            {user ? `${user.first_name} ${user.last_name} - @${user.username}` : ""}
+            {user ? `@${user.username}` : ""}
           </DialogDescription>
         </DialogHeader>
 
         {user ? (
-          <div className="grid gap-3 text-sm">
+          <div className="grid max-h-[60vh] gap-3 overflow-y-auto text-sm">
             <div className="flex items-center justify-between gap-3 rounded-lg border border-border/70 p-3">
               <span className="text-muted-foreground">Statut</span>
               {statusBadge(user.account_status)}
@@ -158,19 +195,19 @@ function UserDetailsDialog({
             <DetailLine label="Date de naissance" value={formatUserDate(user.birth_date)} />
             <DetailLine
               label="Activation"
-              value={user.must_change_password ? "Mot de passe temporaire" : "Mot de passe final defini"}
+              value={user.must_change_password ? "Mot de passe temporaire" : "Mot de passe choisi"}
             />
-            <DetailLine label="Cree le" value={formatUserDate(user.created_at)} />
-            <DetailLine label="Active le" value={formatUserDate(user.activated_at)} />
+            <DetailLine label="Créé le" value={formatUserDate(user.created_at)} />
+            <DetailLine label="Activé le" value={formatUserDate(user.activated_at)} />
             {activity ? (
               <div className="mt-2 rounded-lg border border-border/70 p-3">
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Activite Sprint 4
+                  Activité
                 </h3>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <DetailLine label="Creations" value={`${activity.creations_approuvees}/${activity.creations_soumises}`} />
+                  <DetailLine label="Créations" value={`${activity.creations_approuvees}/${activity.creations_soumises}`} />
                   <DetailLine
-                    label="Quiz termines"
+                    label="Quiz terminés"
                     value={String(activity.quiz_completes)}
                   />
                   <DetailLine
@@ -178,7 +215,7 @@ function UserDetailsDialog({
                     value={String(activity.propositions_musique_soumises)}
                   />
                   <DetailLine
-                    label="Defis termines"
+                    label="Défis terminés"
                     value={`${activity.defis_termines}/${activity.participations_defis}`}
                   />
                 </div>
@@ -187,11 +224,71 @@ function UserDetailsDialog({
           </div>
         ) : null}
 
+        {user ? (
+          <div className="flex flex-col gap-2 border-t pt-4">
+            <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">Actions</span>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <ActionFiche onClick={() => actions.onEdit(user)}>
+                <Pencil className="h-4 w-4" /> Modifier
+              </ActionFiche>
+              <ActionFiche onClick={() => actions.onResetPassword(user)}>
+                <KeyRound className="h-4 w-4" /> Nouveau mot de passe
+              </ActionFiche>
+              {user.role === "user" ? (
+                <ActionFiche onClick={() => actions.onChangeQr(user)}>
+                  <QrCode className="h-4 w-4" /> Changer son QR
+                </ActionFiche>
+              ) : null}
+              {user.account_status === "suspended" ? (
+                <ActionFiche onClick={() => actions.onReactivate(user)}>
+                  <ShieldCheck className="h-4 w-4" /> Réactiver
+                </ActionFiche>
+              ) : (
+                <ActionFiche onClick={() => actions.onSuspend(user)} disabled={user.is_superadmin}>
+                  <ShieldBan className="h-4 w-4" /> Suspendre
+                </ActionFiche>
+              )}
+              <ActionFiche onClick={() => actions.onDelete(user)} disabled={user.is_superadmin} danger>
+                <Trash2 className="h-4 w-4" /> Supprimer
+              </ActionFiche>
+            </div>
+          </div>
+        ) : null}
+
         <DialogFooter>
-          <Button onClick={onClose}>Fermer</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Fermer
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function AdoCarte({ user, onOpen }: { user: User; onOpen: (user: User) => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => onOpen(user)}
+        className="border-border bg-card flex min-h-16 w-full items-center gap-3 rounded-[18px] border px-4 py-3 text-left"
+      >
+        <span className="bg-muted text-muted-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
+          {user.first_name?.[0] ?? ""}
+          {user.last_name?.[0] ?? ""}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate font-semibold">
+            {user.first_name} {user.last_name}
+          </span>
+          <span className="text-muted-foreground truncate text-xs">@{user.username}</span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          {statusBadge(user.account_status)}
+          {user.role !== "user" || user.is_superadmin ? roleBadge(user.role, user.is_superadmin) : null}
+        </span>
+      </button>
+    </li>
   )
 }
 
@@ -206,6 +303,30 @@ export default function AdminUsersPage() {
   const [confirmingSuspend, setConfirmingSuspend] = useState<User | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState<User | null>(null)
   const [confirmingQr, setConfirmingQr] = useState<User | null>(null)
+  const [confirmingReset, setConfirmingReset] = useState<User | null>(null)
+
+  // Arrivée depuis la page Aujourd'hui : recherche pré-remplie ou création directe.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get("q")
+    if (q) setSearch(q)
+    if (params.get("nouveau") === "1") setCreateOpen(true)
+  }, [])
+
+  const ficheActions: FicheActions = {
+    onEdit: (u) => {
+      setViewing(null)
+      setEditing(u)
+    },
+    onResetPassword: (u) => setConfirmingReset(u),
+    onChangeQr: (u) => setConfirmingQr(u),
+    onSuspend: (u) => setConfirmingSuspend(u),
+    onReactivate: (u) => {
+      setViewing(null)
+      void onReactivate(u)
+    },
+    onDelete: (u) => setConfirmingDelete(u),
+  }
 
   async function onRegenererQr(user: User) {
     try {
@@ -254,6 +375,7 @@ export default function AdminUsersPage() {
       await adminSuspendUser(user.id)
       toast.success(`${user.first_name} ${user.last_name} a été suspendu`)
       setConfirmingSuspend(null)
+      setViewing(null)
       refresh()
     } catch (error) {
       toast.error((error as ApiError).message ?? "Opération impossible")
@@ -271,6 +393,8 @@ export default function AdminUsersPage() {
   }
 
   async function onResetPassword(user: User) {
+    setConfirmingReset(null)
+    setViewing(null)
     try {
       const result = await adminResetUserPassword(user.id)
       setTempPassword(result.temporary_password)
@@ -285,6 +409,7 @@ export default function AdminUsersPage() {
       await adminDeleteUser(user.id)
       toast.success(`${user.first_name} ${user.last_name} supprimé`)
       setConfirmingDelete(null)
+      setViewing(null)
       refresh()
     } catch (error) {
       toast.error((error as ApiError).message ?? "Opération impossible")
@@ -294,53 +419,52 @@ export default function AdminUsersPage() {
   return (
     <>
       <AdminPageHeader
-        eyebrow="Gestion des utilisateurs"
-        title="Utilisateurs"
-        description="Créez, modifiez, suspendez ou réinitialisez le mot de passe des comptes. Les ados ne peuvent pas s'inscrire eux-mêmes."
+        title="Ados"
+        description="Cherche un ado, ouvre sa fiche ou crée son compte. Les ados ne peuvent pas s'inscrire seuls."
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Nouveau compte
+          <Button onClick={() => setCreateOpen(true)} className="h-12 rounded-[14px] px-5 text-[15px]">
+            <UserPlus className="mr-1 h-4 w-4" />
+            Ajouter un ado
           </Button>
         }
       />
 
-      <div className="px-6 py-6 md:px-10 md:py-8">
-        <Card className="border-border/70">
-          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-end">
+      <div className="px-5 py-6 md:px-10 md:py-8">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
             <div className="flex-1">
-              <Label htmlFor="search" className="text-xs font-semibold uppercase tracking-wider">
-                Recherche
+              <Label htmlFor="search" className="sr-only">
+                Rechercher
               </Label>
-              <div className="relative mt-1.5">
+              <div className="relative">
                 <Search className="text-muted-foreground pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                 <Input
                   id="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Nom, email ou nom d'utilisateur"
-                  className="pl-9"
+                  placeholder="Rechercher un ado (nom, email, pseudo)"
+                  className="bg-card h-12 rounded-[14px] pl-10 text-[15px]"
                 />
               </div>
             </div>
-            <div className="w-full md:w-52">
-              <Label className="text-xs font-semibold uppercase tracking-wider">Rôle</Label>
+            <div className="grid grid-cols-2 gap-3 md:flex md:gap-4">
+            <div className="w-full md:w-48">
+              <Label className="sr-only">Rôle</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="mt-1.5">
+                <SelectTrigger className="bg-card h-12! w-full rounded-[14px]" aria-label="Rôle">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les rôles</SelectItem>
-                  <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="moderator">Modérateur</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="all">Tous les comptes</SelectItem>
+                  <SelectItem value="user">Ados</SelectItem>
+                  <SelectItem value="moderator">Modérateurs</SelectItem>
+                  <SelectItem value="admin">Admins</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-full md:w-52">
-              <Label className="text-xs font-semibold uppercase tracking-wider">Statut</Label>
+            <div className="w-full md:w-48">
+              <Label className="sr-only">Statut</Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="mt-1.5">
+                <SelectTrigger className="bg-card h-12! w-full rounded-[14px]" aria-label="Statut">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -351,16 +475,31 @@ export default function AdminUsersPage() {
                 </SelectContent>
               </Select>
             </div>
-          </CardContent>
-        </Card>
+            </div>
+        </div>
 
-        <Card className="border-border/70 mt-6">
+        {/* Téléphone : cartes. Un appui ouvre la fiche, où sont regroupées les actions. */}
+        <div className="mt-5 md:hidden">
+          {isLoading ? (
+            <p className="text-muted-foreground py-6 text-sm">Chargement…</p>
+          ) : (data?.items.length ?? 0) === 0 ? (
+            <p className="text-muted-foreground py-6 text-sm">Aucun compte ne correspond à cette recherche.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {data!.items.map((user) => (
+                <AdoCarte key={user.id} user={user} onOpen={onView} />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <Card className="border-border/70 mt-6 hidden md:block">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Utilisateur</TableHead>
+                    <TableHead>Nom</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Rôle</TableHead>
                     <TableHead>Statut</TableHead>
@@ -371,13 +510,13 @@ export default function AdminUsersPage() {
                   {isLoading ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-muted-foreground py-8 text-center text-sm">
-                        Chargement des utilisateurs...
+                        Chargement…
                       </TableCell>
                     </TableRow>
                   ) : (data?.items.length ?? 0) === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-muted-foreground py-8 text-center text-sm">
-                        Aucun utilisateur ne correspond à ces critères.
+                        Aucun compte ne correspond à cette recherche.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -385,9 +524,13 @@ export default function AdminUsersPage() {
                       <TableRow key={user.id}>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span className="font-medium">
+                            <button
+                              type="button"
+                              onClick={() => onView(user)}
+                              className="w-fit text-left font-medium hover:underline"
+                            >
                               {user.first_name} {user.last_name}
-                            </span>
+                            </button>
                             <span className="text-muted-foreground text-xs">@{user.username}</span>
                           </div>
                         </TableCell>
@@ -404,15 +547,15 @@ export default function AdminUsersPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => onView(user)}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                Consulter
+                                Ouvrir la fiche
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setEditing(user)}>
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Modifier
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onResetPassword(user)}>
+                              <DropdownMenuItem onClick={() => setConfirmingReset(user)}>
                                 <KeyRound className="mr-2 h-4 w-4" />
-                                Réinitialiser le mot de passe
+                                Nouveau mot de passe
                               </DropdownMenuItem>
                               {user.role === "user" ? (
                                 <DropdownMenuItem onClick={() => setConfirmingQr(user)}>
@@ -479,7 +622,27 @@ export default function AdminUsersPage() {
           setViewing(null)
           setViewingActivity(null)
         }}
+        actions={ficheActions}
       />
+
+      <AlertDialog open={!!confirmingReset} onOpenChange={(open) => !open && setConfirmingReset(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Créer un nouveau mot de passe ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmingReset
+                ? `L'ancien mot de passe de ${confirmingReset.first_name} ${confirmingReset.last_name} ne marchera plus. Un mot de passe temporaire s'affichera, à lui transmettre.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmingReset && void onResetPassword(confirmingReset)}>
+              Créer le mot de passe
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!confirmingQr} onOpenChange={(open) => !open && setConfirmingQr(null)}>
         <AlertDialogContent>
@@ -603,7 +766,7 @@ function CreateUserDialog({
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">Créer un compte</DialogTitle>
           <DialogDescription>
-            Le backend génère automatiquement un mot de passe temporaire que vous pourrez copier après la création.
+            Un mot de passe temporaire est créé automatiquement. Tu pourras le copier juste après.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -670,7 +833,7 @@ function CreateUserDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Utilisateur</SelectItem>
+                <SelectItem value="user">Ado</SelectItem>
                 <SelectItem value="moderator">Modérateur</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
@@ -777,7 +940,7 @@ function EditUserDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="user">Utilisateur</SelectItem>
+                <SelectItem value="user">Ado</SelectItem>
                 <SelectItem value="moderator">Modérateur</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
               </SelectContent>
@@ -825,7 +988,7 @@ function TempPasswordDialog({
         <DialogHeader>
           <DialogTitle className="font-serif text-xl">Mot de passe temporaire</DialogTitle>
           <DialogDescription>
-            Transmettez ce mot de passe à l&apos;utilisateur. Il ne sera plus affiché après fermeture.
+            À transmettre à la personne. Il ne sera plus affiché après fermeture.
           </DialogDescription>
         </DialogHeader>
         <div className="bg-muted/50 flex items-center justify-between gap-2 rounded-lg border px-4 py-3">

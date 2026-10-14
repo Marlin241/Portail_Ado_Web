@@ -40,16 +40,16 @@ function accord(prenom: string, nom: string) {
 
 function messageCamera(err: unknown): string {
   if (typeof navigator !== "undefined" && !navigator.mediaDevices) {
-    return "La caméra n'est disponible que sur une adresse sécurisée (https). Vous pouvez chercher l'ado par son nom."
+    return "La caméra n'est disponible que sur une adresse sécurisée (https). Tu peux chercher l'ado par son nom."
   }
   const nom = (err as { name?: string } | undefined)?.name
   if (nom === "NotAllowedError") {
-    return "L'accès à la caméra est refusé. Autorisez la caméra pour ce site dans les réglages du navigateur, ou cherchez l'ado par son nom."
+    return "L'accès à la caméra est refusé. Autorise la caméra pour ce site dans les réglages du navigateur, ou cherche l'ado par son nom."
   }
   if (nom === "NotFoundError" || nom === "OverconstrainedError") {
-    return "Aucune caméra trouvée sur cet appareil. Vous pouvez chercher l'ado par son nom."
+    return "Aucune caméra trouvée sur cet appareil. Tu peux chercher l'ado par son nom."
   }
-  return "Impossible d'ouvrir la caméra. Vous pouvez chercher l'ado par son nom."
+  return "Impossible d'ouvrir la caméra. Tu peux chercher l'ado par son nom."
 }
 
 export default function ScannerPage() {
@@ -254,7 +254,7 @@ export default function ScannerPage() {
       </div>
 
       <p className="text-muted-foreground text-center text-sm">
-        Visez le QR de l&apos;ado : il est enregistré tout seul, passez au suivant.
+        Vise le QR de l&apos;ado : il est enregistré tout seul, passe au suivant.
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -283,7 +283,7 @@ export default function ScannerPage() {
             aria-label="Chercher un ado par son nom"
           />
           {qDiffere.trim().length < 2 ? (
-            <p className="text-muted-foreground px-1 text-sm">Tapez au moins 2 lettres.</p>
+            <p className="text-muted-foreground px-1 text-sm">Tape au moins 2 lettres.</p>
           ) : resultats && resultats.length === 0 ? (
             <p className="text-muted-foreground px-1 text-sm">Aucun ado trouvé.</p>
           ) : (
